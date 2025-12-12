@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PostServiceService } from './post-service.service';
-import { CreatePostDto, UpdatePostDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto } from '@app/common';
 
 @Controller()
 export class PostServiceController {
@@ -13,8 +13,8 @@ export class PostServiceController {
   }
 
   @MessagePattern('find_all_posts')
-  findAll() {
-    return this.postService.findAll();
+  findAll(@Payload() paginationDto: PaginationDto) {
+    return this.postService.findAll(paginationDto);
   }
 
   @MessagePattern('find_one_post')

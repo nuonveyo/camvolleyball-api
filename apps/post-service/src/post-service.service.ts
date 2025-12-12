@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post, CreatePostDto, UpdatePostDto, User } from '@app/common';
+import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto } from '@app/common';
 
 @Injectable()
 export class PostServiceService {
@@ -21,11 +21,23 @@ export class PostServiceService {
     return this.postRepository.save(post);
   }
 
-  async findAll() {
-    return this.postRepository.find({
+  async findAll(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skippedItems = (page - 1) * limit;
+
+    const [data, total] = await this.postRepository.findAndCount({
       order: { createdAt: 'DESC' },
       relations: ['user', 'user.profile'],
+      take: limit,
+      skip: skippedItems,
     });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string) {

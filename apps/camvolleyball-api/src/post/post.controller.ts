@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Inject, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Put, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { CreatePostDto, UpdatePostDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto } from '@app/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('posts')
@@ -15,8 +15,8 @@ export class PostController {
     }
 
     @Get() // Public? Or Authenticated? Let's make it public for feed
-    findAll() {
-        return this.client.send('find_all_posts', {});
+    findAll(@Query() paginationDto: PaginationDto) {
+        return this.client.send('find_all_posts', paginationDto);
     }
 
     @Get(':id')
