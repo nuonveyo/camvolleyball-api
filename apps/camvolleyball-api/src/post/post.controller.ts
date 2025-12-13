@@ -46,6 +46,11 @@ export class PostController {
         return this.client.send('add_comment', dto);
     }
 
+    @Get(':id/comments')
+    findComments(@Param('id') id: string, @Query() paginationDto: PaginationDto) {
+        return this.client.send('find_comments', { postId: id, pagination: paginationDto });
+    }
+
     @UseGuards(JwtAuthGuard)
     @Post(':id/likes')
     toggleLike(@Param('id') id: string, @Request() req) {

@@ -37,6 +37,11 @@ export class PostServiceController {
     return this.postService.addComment(dto);
   }
 
+  @MessagePattern('find_comments')
+  findComments(@Payload() payload: { postId: string, pagination: PaginationDto }) {
+    return this.postService.findComments(payload.postId, payload.pagination);
+  }
+
   @MessagePattern('toggle_like')
   toggleLike(@Payload() payload: { postId: string; userId: string }) {
     return this.postService.toggleLike(payload);

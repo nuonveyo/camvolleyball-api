@@ -86,6 +86,26 @@ export class PostServiceService {
     return saved;
   }
 
+  async findComments(postId: string, paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skippedItems = (page - 1) * limit;
+
+    const [data, total] = await this.commentRepository.findAndCount({
+      where: { postId },
+      order: { createdAt: 'DESC' },
+      relations: ['user', 'user.profile'],
+      take: limit,
+      skip: skippedItems,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
   async toggleLike(dto: { postId: string, userId: string }) {
     const existingLike = await this.likeRepository.findOne({ where: { postId: dto.postId, userId: dto.userId } });
 
