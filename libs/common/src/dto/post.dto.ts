@@ -2,8 +2,22 @@ import { IsString, IsOptional, IsUUID, ValidateNested, IsArray, IsUrl } from 'cl
 import { Type } from 'class-transformer';
 
 export class MediaItemDto {
-    @IsUrl()
+    @IsUrl({ require_tld: false })
     url: string;
+
+    @IsString()
+    @IsOptional()
+    key?: string; // S3 Key
+
+    @IsString()
+    @IsOptional()
+    type?: string; // MIME type
+
+    @IsOptional()
+    width?: number;
+
+    @IsOptional()
+    height?: number;
 }
 
 export class PostContentDto {
