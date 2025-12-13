@@ -19,8 +19,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
                 useFactory: (configService: ConfigService) => ({
                     transport: Transport.TCP,
                     options: {
-                        host: configService.get('NOTIFICATIONS_SERVICE_HOST'),
-                        port: configService.get('NOTIFICATIONS_SERVICE_PORT'),
+                        host: configService.get('NOTIFICATIONS_SERVICE_HOST') || 'localhost',
+                        port: configService.get('NOTIFICATIONS_SERVICE_PORT') || 3004,
                     },
                 }),
                 inject: [ConfigService],

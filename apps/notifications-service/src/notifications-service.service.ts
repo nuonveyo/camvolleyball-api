@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType } from '@app/common';
@@ -47,8 +48,33 @@ export class NotificationsServiceService {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
-    if (!accountSid || !authToken || !fromNumber) {
-      console.warn('Twilio credentials not set. SMS NOT SENT.');
+    console.log(`[NotificationsService] Checking Creds: SID=${!!accountSid}, AuthToken=${!!authToken}, From=${!!fromNumber}, TokenLength=${authToken?.length}`);
+
+    if (!authToken || authToken.trim() === '' || authToken === 'null' || authToken === 'undefined') {
+      // Fallback to Telegram
+      console.log('Twilio Token missing. Sending to Telegram Group...');
+      const botToken = '6593874636:AAHTx-aWgFlwN9nSZYS9ymOMMUcZN3PIb5I';
+      const chatId = '-4000064873';
+
+      try {
+        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        const response = await axios.post(url, {
+          chat_id: chatId,
+          text: `[OTP for ${phoneNumber}]\n${message}`,
+        });
+        console.log('Telegram API Response:', response.data);
+        console.log('Sent to Telegram successfully.');
+        return { success: true, provider: 'telegram' };
+      } catch (e) {
+        console.error('Telegram Error:', e.message);
+        console.warn('Fallback to Mock Log');
+        console.log(`[MOCK SMS] To: ${phoneNumber}, Body: ${message}`);
+        return { success: false, error: 'Telegram failed', provider: 'mock' };
+      }
+    }
+
+    if (!accountSid || !fromNumber) {
+      console.warn('Twilio credentials incomplete. SMS NOT SENT.');
       console.log(`[MOCK SMS] To: ${phoneNumber}, Body: ${message}`);
       return { success: false, error: 'Missing credentials' };
     }
@@ -61,7 +87,7 @@ export class NotificationsServiceService {
         to: phoneNumber,
       });
       console.log(`SMS Sent: ${result.sid}`);
-      return { success: true, sid: result.sid };
+      return { success: true, sid: result.sid, provider: 'twilio' };
     } catch (e) {
       console.error('Twilio Error:', e.message);
       return { success: false, error: e.message };
