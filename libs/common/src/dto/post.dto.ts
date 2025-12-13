@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, ValidateNested, IsArray, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsUUID, ValidateNested, IsArray, IsUrl, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MediaItemDto {
@@ -44,6 +44,16 @@ export class CreatePostDto {
     @Type(() => PostContentDto)
     contents?: PostContentDto;
 
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    tags?: string[];
+
+    @IsOptional()
+    @IsEnum(['public', 'followers'])
+    visibility?: 'public' | 'followers';
+
+    @IsOptional()
     @IsUUID()
     userId: string; // Passed from Gateway
 }
@@ -57,6 +67,12 @@ export class UpdatePostDto {
     @Type(() => PostContentDto)
     contents?: PostContentDto;
 
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    tags?: string[];
+
+    @IsOptional()
     @IsUUID()
     userId: string; // Authenticated user
 }

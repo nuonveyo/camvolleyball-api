@@ -8,9 +8,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { FileModule } from './file/file.module';
 import { HeaderMiddleware } from './common/middleware/header.middleware';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { SocialModule } from './social/social.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule, SocialModule],
   controllers: [AppController],
   providers: [AppService],
 })

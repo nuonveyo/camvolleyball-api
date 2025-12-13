@@ -2,10 +2,16 @@ import { Controller, Get, Post, Body, Param, Delete, Inject, UseGuards, Request,
 import { ClientProxy } from '@nestjs/microservices';
 import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SocialService } from '../social/social.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('posts')
 export class PostController {
-    constructor(@Inject('POST_SERVICE') private client: ClientProxy) { }
+    constructor(
+        @Inject('POST_SERVICE') private client: ClientProxy,
+        private readonly socialService: SocialService,
+        private readonly jwtService: JwtService,
+    ) { }
 
     @UseGuards(JwtAuthGuard)
     @Post()
@@ -14,9 +20,28 @@ export class PostController {
         return this.client.send('create_post', dto);
     }
 
-    @Get() // Public? Or Authenticated? Let's make it public for feed
-    findAll(@Query() paginationDto: PaginationDto) {
-        return this.client.send('find_all_posts', paginationDto);
+    @Get()
+    async findAll(@Query() paginationDto: PaginationDto, @Request() req) {
+        let userId: string | null = null;
+        let followingIds: string[] = [];
+
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
+            try {
+                const token = authHeader.split(' ')[1];
+                const decoded = this.jwtService.decode(token) as any;
+                if (decoded && decoded.sub) {
+                    userId = decoded.sub;
+                    if (userId) {
+                        followingIds = await this.socialService.getFollowingIds(userId);
+                    }
+                }
+            } catch (e) {
+                // Ignore invalid token, treat as guest
+            }
+        }
+
+        return this.client.send('find_all_posts', { ...paginationDto, userId, followingIds });
     }
 
     @Get(':id')

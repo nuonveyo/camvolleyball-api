@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere, ArrayContains, Raw, In } from 'typeorm';
 import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto } from '@app/common';
 
 @Injectable()
@@ -22,24 +22,49 @@ export class PostServiceService {
     const post = this.postRepository.create({
       userId: dto.userId,
       contents: dto.contents,
+      tags: dto.tags,
     });
     return this.postRepository.save(post);
   }
 
-  async findAll(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async findAll(payload: PaginationDto & { userId?: string, followingIds?: string[] }) {
+    const { page = 1, limit = 10, search, tag, userId, followingIds } = payload;
     const skippedItems = (page - 1) * limit;
 
+    const where: FindOptionsWhere<Post> | FindOptionsWhere<Post>[] = [];
+
+    // Base conditions
+    const baseCondition: FindOptionsWhere<Post> = {};
+    if (tag) baseCondition.tags = ArrayContains([tag]);
+    if (search) baseCondition.contents = Raw((alias) => `${alias}->>'text' ILIKE :search`, { search: `%${search}%` });
+
+    // Public posts
+    where.push({ ...baseCondition, visibility: 'public' });
+
+    // My posts (always visible to me)
+    if (userId) {
+      where.push({ ...baseCondition, userId });
+    }
+
+    // Followed posts (visible if I follow author)
+    if (followingIds && followingIds.length > 0) {
+      // Need to check authorId IN (followingIds) AND visibility = 'followers'
+      // TypeORM In() import needed
+      where.push({
+        ...baseCondition,
+        visibility: 'followers',
+        userId: In(followingIds),
+      });
+    }
+
     const [data, total] = await this.postRepository.findAndCount({
+      where,
       order: { createdAt: 'DESC' },
       relations: ['user', 'user.profile'],
       take: limit,
       skip: skippedItems,
     });
 
-    // Populate likes/comments counts or load relations if needed.
-    // Ideally we would use loadRelationCountAndMap or QueryBuilder but keeping simple.
-    // Entities have likesCount columns, we should increment them on actions.
     return {
       data,
       total,
@@ -61,6 +86,7 @@ export class PostServiceService {
       throw new Error('Post not found or unauthorized');
     }
     if (dto.contents) post.contents = dto.contents;
+    if (dto.tags) post.tags = dto.tags;
     return this.postRepository.save(post);
   }
 

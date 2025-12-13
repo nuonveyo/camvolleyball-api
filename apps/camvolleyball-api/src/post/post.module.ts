@@ -2,8 +2,13 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PostController } from './post.controller';
 
+import { AuthModule } from '../auth/auth.module';
+import { SocialModule } from '../social/social.module';
+
 @Module({
     imports: [
+        AuthModule,
+        SocialModule,
         ClientsModule.register([
             {
                 name: 'POST_SERVICE',

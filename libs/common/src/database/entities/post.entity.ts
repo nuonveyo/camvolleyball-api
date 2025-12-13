@@ -17,6 +17,12 @@ export class Post extends BaseEntity {
     @Column({ type: 'jsonb', nullable: true })
     contents: any;
 
+    @Column({ type: 'text', array: true, nullable: true })
+    tags: string[];
+
+    @Column({ type: 'enum', enum: ['public', 'followers'], default: 'public' })
+    visibility: 'public' | 'followers';
+
     @Column({ name: 'likes_count', default: 0 })
     likesCount: number;
 
