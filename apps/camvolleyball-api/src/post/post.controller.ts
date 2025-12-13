@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -25,7 +25,7 @@ export class PostController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @Put(':id') // Using Put for update
+    @Post(':id') // Using Post for update
     update(@Param('id') id: string, @Body() dto: UpdatePostDto, @Request() req) {
         dto.id = id;
         dto.userId = req.user.userId;

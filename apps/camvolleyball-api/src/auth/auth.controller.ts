@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto, ConfirmOtpDto } from './dto/otp.dto';
+import { RequestResetPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -26,5 +27,15 @@ export class AuthController {
     @Post('otp/confirm')
     confirmOtp(@Body() confirmOtpDto: ConfirmOtpDto) {
         return this.authService.confirmOtp(confirmOtpDto);
+    }
+
+    @Post('password/reset-request')
+    requestResetPassword(@Body() dto: RequestResetPasswordDto) {
+        return this.authService.requestResetPassword(dto);
+    }
+
+    @Post('password/reset')
+    resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto);
     }
 }

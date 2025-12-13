@@ -6,6 +6,7 @@ import { User, OtpCode, UserProfile, Role } from '@app/common';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto, ConfirmOtpDto, OtpType } from './dto/otp.dto';
+import { RequestResetPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -95,23 +96,56 @@ export class AuthService {
     }
 
     async confirmOtp(dto: ConfirmOtpDto) {
-        const otp = await this.otpRepository.findOne({
-            where: {
-                phoneNumber: dto.phoneNumber,
-                code: dto.code,
-                type: dto.type,
-                isUsed: false,
-            },
+        const { phoneNumber, code, type } = dto;
+        const validOtp = await this.otpRepository.findOne({
+            where: { phoneNumber, code, type, isUsed: false },
             order: { createdAt: 'DESC' },
         });
 
-        if (!otp || otp.expiresAt < new Date()) {
-            throw new BadRequestException('Invalid or expired OTP');
+        if (!validOtp || new Date() > validOtp.expiresAt) {
+            throw new UnauthorizedException('Invalid or expired OTP');
         }
 
-        otp.isUsed = true;
-        await this.otpRepository.save(otp);
+        // Mark OTP as used
+        validOtp.isUsed = true;
+        await this.otpRepository.save(validOtp);
 
-        return { message: 'OTP confirmed' };
+        return { message: 'OTP verified successfully' };
+    }
+
+    async requestResetPassword(dto: RequestResetPasswordDto) {
+        const user = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
+        if (!user) {
+            throw new UnauthorizedException('User not found'); // Or silence for security, but usually better to know in dev
+        }
+        // Send OTP (mocked)
+        return this.sendOtp({ phoneNumber: dto.phoneNumber, type: OtpType.PASSWORD_RESET });
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const { phoneNumber, otp, newPassword } = dto;
+        // Verify OTP first
+        const validOtp = await this.otpRepository.findOne({
+            where: { phoneNumber, code: otp, type: OtpType.PASSWORD_RESET, isUsed: false },
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!validOtp || new Date() > validOtp.expiresAt) {
+            throw new UnauthorizedException('Invalid or expired OTP');
+        }
+
+        const user = await this.userRepository.findOne({ where: { phoneNumber } });
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        user.passwordHash = await bcrypt.hash(newPassword, 10);
+        await this.userRepository.save(user);
+
+        // Mark OTP as used
+        validOtp.isUsed = true;
+        await this.otpRepository.save(validOtp);
+
+        return { message: 'Password reset successfully' };
     }
 }

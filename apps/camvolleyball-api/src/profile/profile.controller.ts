@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,7 +13,7 @@ export class ProfileController {
         return this.profileService.getProfile(req.user.userId);
     }
 
-    @Patch()
+    @Post()
     updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
         return this.profileService.updateProfile(req.user.userId, dto);
     }

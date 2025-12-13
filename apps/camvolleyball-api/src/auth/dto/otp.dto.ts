@@ -1,8 +1,8 @@
 import { IsString, IsPhoneNumber, IsEnum } from 'class-validator';
 
 export enum OtpType {
-    REGISTER = 'REGISTER',
-    FORGOT_PASS = 'FORGOT_PASS',
+    VERIFICATION = 'verification',
+    PASSWORD_RESET = 'password_reset',
 }
 
 export class SendOtpDto {
