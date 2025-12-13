@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { User, OtpCode, UserProfile, Role } from '@app/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -12,6 +13,19 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     imports: [
         TypeOrmModule.forFeature([User, OtpCode, UserProfile, Role]),
         PassportModule,
+        ClientsModule.registerAsync([
+            {
+                name: 'NOTIFICATIONS_SERVICE',
+                useFactory: (configService: ConfigService) => ({
+                    transport: Transport.TCP,
+                    options: {
+                        host: configService.get('NOTIFICATIONS_SERVICE_HOST'),
+                        port: configService.get('NOTIFICATIONS_SERVICE_PORT'),
+                    },
+                }),
+                inject: [ConfigService],
+            },
+        ]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

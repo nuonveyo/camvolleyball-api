@@ -41,4 +41,30 @@ export class NotificationsServiceService {
     await this.notificationRepository.update(id, { isRead: true });
     return { success: true };
   }
+
+  async sendSms(phoneNumber: string, message: string) {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!accountSid || !authToken || !fromNumber) {
+      console.warn('Twilio credentials not set. SMS NOT SENT.');
+      console.log(`[MOCK SMS] To: ${phoneNumber}, Body: ${message}`);
+      return { success: false, error: 'Missing credentials' };
+    }
+
+    try {
+      const client = require('twilio')(accountSid, authToken);
+      const result = await client.messages.create({
+        body: message,
+        from: fromNumber,
+        to: phoneNumber,
+      });
+      console.log(`SMS Sent: ${result.sid}`);
+      return { success: true, sid: result.sid };
+    } catch (e) {
+      console.error('Twilio Error:', e.message);
+      return { success: false, error: e.message };
+    }
+  }
 }

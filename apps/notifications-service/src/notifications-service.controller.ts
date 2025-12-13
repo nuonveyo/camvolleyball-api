@@ -21,4 +21,9 @@ export class NotificationsServiceController {
   async markRead(@Payload() id: string) {
     return this.notificationsService.markAsRead(id);
   }
+
+  @MessagePattern('send_sms')
+  async sendSms(@Payload() data: { phoneNumber: string, message: string }) {
+    return this.notificationsService.sendSms(data.phoneNumber, data.message);
+  }
 }

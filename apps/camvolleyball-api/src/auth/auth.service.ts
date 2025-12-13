@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +22,7 @@ export class AuthService {
         @InjectRepository(Role)
         private roleRepository: Repository<Role>,
         private jwtService: JwtService,
+        @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -90,9 +92,14 @@ export class AuthService {
             expiresAt,
         });
 
-        // In production, call SMS provider here.
-        // For dev, return the code or just success.
-        return { message: 'OTP sent successfully', dev_code: code };
+        // Trigger SMS via Notifications Service
+        this.notificationsClient.emit('send_sms', {
+            phoneNumber: dto.phoneNumber,
+            message: `Your CamVolleyball verification code is: ${code}`,
+        });
+
+        // In production, do NOT return the code.
+        return { message: 'OTP sent successfully' };
     }
 
     async confirmOtp(dto: ConfirmOtpDto) {
