@@ -14,11 +14,8 @@ export class Post extends BaseEntity {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @Column({ type: 'text', nullable: true })
-    description: string;
-
-    @Column({ name: 'image_url', type: 'text', nullable: true })
-    imageUrl: string;
+    @Column({ type: 'jsonb', nullable: true })
+    contents: any;
 
     @Column({ name: 'likes_count', default: 0 })
     likesCount: number;

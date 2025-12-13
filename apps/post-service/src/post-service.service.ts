@@ -21,8 +21,7 @@ export class PostServiceService {
   async create(dto: CreatePostDto) {
     const post = this.postRepository.create({
       userId: dto.userId,
-      description: dto.description,
-      imageUrl: dto.imageUrl,
+      contents: dto.contents,
     });
     return this.postRepository.save(post);
   }
@@ -61,8 +60,7 @@ export class PostServiceService {
     if (!post) {
       throw new Error('Post not found or unauthorized');
     }
-    if (dto.description) post.description = dto.description;
-    if (dto.imageUrl) post.imageUrl = dto.imageUrl;
+    if (dto.contents) post.contents = dto.contents;
     return this.postRepository.save(post);
   }
 
@@ -76,7 +74,7 @@ export class PostServiceService {
 
   async addComment(dto: CreateCommentDto) {
     const comment = this.commentRepository.create({
-      message: dto.message,
+      contents: dto.contents,
       postId: dto.postId,
       userId: dto.userId,
     });

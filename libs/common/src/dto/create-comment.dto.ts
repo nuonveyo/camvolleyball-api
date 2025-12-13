@@ -1,9 +1,12 @@
-import { IsString, IsNotEmpty, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, ValidateNested, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
+import { PostContentDto } from './post.dto';
 
 export class CreateCommentDto {
-    @IsString()
-    @IsNotEmpty()
-    message: string;
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => PostContentDto)
+    contents?: PostContentDto;
 
     @IsUUID()
     postId: string;

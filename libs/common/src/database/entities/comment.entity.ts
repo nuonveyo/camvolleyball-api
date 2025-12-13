@@ -19,6 +19,6 @@ export class Comment extends BaseEntity {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @Column({ type: 'text' })
-    message: string;
+    @Column({ type: 'jsonb', nullable: true })
+    contents: any;
 }
