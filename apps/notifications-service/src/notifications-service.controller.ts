@@ -24,7 +24,6 @@ export class NotificationsServiceController {
 
   @MessagePattern('send_sms')
   async sendSms(@Payload() data: { phoneNumber: string, message: string }) {
-    console.log(`[NotificationsController] Received 'send_sms' payload:`, data);
     return this.notificationsService.sendSms(data.phoneNumber, data.message);
   }
 }
