@@ -11,9 +11,10 @@ import { HeaderMiddleware } from './common/middleware/header.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SocialModule } from './social/social.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule, SocialModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule, SocialModule, NotificationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

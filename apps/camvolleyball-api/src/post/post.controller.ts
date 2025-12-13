@@ -11,13 +11,29 @@ export class PostController {
         @Inject('POST_SERVICE') private client: ClientProxy,
         private readonly socialService: SocialService,
         private readonly jwtService: JwtService,
+        @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
     ) { }
 
     @UseGuards(JwtAuthGuard)
     @Post()
-    create(@Body() dto: CreatePostDto, @Request() req) {
+    async create(@Body() dto: CreatePostDto, @Request() req) {
         dto.userId = req.user.userId;
-        return this.client.send('create_post', dto);
+        const post = await this.client.send('create_post', dto).toPromise();
+
+        // Notify followers
+        const followers = await this.socialService.getFollowers(req.user.userId);
+        // followers is User[]
+        followers.forEach(follower => {
+            this.notificationsClient.emit('notify_user', {
+                recipientId: follower.id,
+                actorId: req.user.userId,
+                type: 'NEW_POST',
+                entityId: post.id,
+                message: 'created a new post',
+            });
+        });
+
+        return post;
     }
 
     @Get()
@@ -37,7 +53,7 @@ export class PostController {
                     }
                 }
             } catch (e) {
-                // Ignore invalid token, treat as guest
+                // Ignore invalid token
             }
         }
 
@@ -65,10 +81,23 @@ export class PostController {
 
     @UseGuards(JwtAuthGuard)
     @Post(':id/comments')
-    addComment(@Param('id') id: string, @Body() dto: CreateCommentDto, @Request() req) {
+    async addComment(@Param('id') id: string, @Body() dto: CreateCommentDto, @Request() req) {
         dto.postId = id;
         dto.userId = req.user.userId;
-        return this.client.send('add_comment', dto);
+        const comment = await this.client.send('add_comment', dto).toPromise();
+
+        // Fetch post to get owner
+        const post = await this.client.send('find_one_post', id).toPromise();
+        if (post && post.userId !== req.user.userId) {
+            this.notificationsClient.emit('notify_user', {
+                recipientId: post.userId,
+                actorId: req.user.userId,
+                type: 'COMMENT',
+                entityId: id,
+                message: 'commented on your post',
+            });
+        }
+        return comment;
     }
 
     @Get(':id/comments')
@@ -78,8 +107,22 @@ export class PostController {
 
     @UseGuards(JwtAuthGuard)
     @Post(':id/likes')
-    toggleLike(@Param('id') id: string, @Request() req) {
-        return this.client.send('toggle_like', { postId: id, userId: req.user.userId });
+    async toggleLike(@Param('id') id: string, @Request() req) {
+        const result = await this.client.send('toggle_like', { postId: id, userId: req.user.userId }).toPromise();
+
+        if (result.liked) {
+            const post = await this.client.send('find_one_post', id).toPromise();
+            if (post && post.userId !== req.user.userId) {
+                this.notificationsClient.emit('notify_user', {
+                    recipientId: post.userId,
+                    actorId: req.user.userId,
+                    type: 'LIKE',
+                    entityId: id,
+                    message: 'liked your post',
+                });
+            }
+        }
+        return result;
     }
 
     @UseGuards(JwtAuthGuard)

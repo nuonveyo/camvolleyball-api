@@ -15,7 +15,7 @@ import * as entities from './entities';
                 username: configService.get<string>('DATABASE_USER'),
                 password: configService.get<string>('DATABASE_PASSWORD'),
                 database: configService.get<string>('DATABASE_NAME'),
-                entities: Object.values(entities),
+                entities: Object.values(entities).filter(entity => typeof entity === 'function'),
                 synchronize: true, // Auto-create tables (dev only)
             }),
         }),

@@ -9,3 +9,4 @@ export * from './comment.entity';
 export * from './like.entity';
 export * from './share.entity';
 export * from './user-follow.entity';
+export * from './notification.entity';
