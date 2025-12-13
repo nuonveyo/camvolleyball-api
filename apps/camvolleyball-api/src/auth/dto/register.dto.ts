@@ -10,5 +10,10 @@ export class RegisterDto {
 
     @IsString()
     @MinLength(6)
+    @IsString()
+    @MinLength(6)
     confirmPassword: string;
+
+    @IsString()
+    verificationToken: string;
 }

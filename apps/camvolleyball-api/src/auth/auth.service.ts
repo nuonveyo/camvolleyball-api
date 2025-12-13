@@ -26,7 +26,19 @@ export class AuthService {
     ) { }
 
     async register(registerDto: RegisterDto) {
-        const { phoneNumber, password, confirmPassword } = registerDto;
+        const { password, confirmPassword, verificationToken } = registerDto;
+
+        // Verify Token
+        let phoneNumber: string;
+        try {
+            const payload = this.jwtService.verify(verificationToken);
+            if (payload.purpose !== 'verification') {
+                throw new UnauthorizedException('Invalid token purpose');
+            }
+            phoneNumber = payload.phoneNumber;
+        } catch (e) {
+            throw new UnauthorizedException('Invalid or expired verification token');
+        }
 
         if (password !== confirmPassword) {
             throw new BadRequestException('Passwords do not match');
@@ -117,7 +129,13 @@ export class AuthService {
         validOtp.isUsed = true;
         await this.otpRepository.save(validOtp);
 
-        return { message: 'OTP verified successfully' };
+        // Generate Verification Token
+        const verificationToken = this.jwtService.sign(
+            { phoneNumber, purpose: type },
+            { expiresIn: '10m' } // Valid for 10 minutes
+        );
+
+        return { message: 'OTP verified successfully', verificationToken };
     }
 
     async requestResetPassword(dto: RequestResetPasswordDto) {
@@ -130,15 +148,18 @@ export class AuthService {
     }
 
     async resetPassword(dto: ResetPasswordDto) {
-        const { phoneNumber, otp, newPassword } = dto;
-        // Verify OTP first
-        const validOtp = await this.otpRepository.findOne({
-            where: { phoneNumber, code: otp, type: OtpType.PASSWORD_RESET, isUsed: false },
-            order: { createdAt: 'DESC' },
-        });
+        const { verificationToken, newPassword } = dto;
 
-        if (!validOtp || new Date() > validOtp.expiresAt) {
-            throw new UnauthorizedException('Invalid or expired OTP');
+        // Verify Token
+        let phoneNumber: string;
+        try {
+            const payload = this.jwtService.verify(verificationToken);
+            if (payload.purpose !== OtpType.PASSWORD_RESET) {
+                throw new UnauthorizedException('Invalid token purpose');
+            }
+            phoneNumber = payload.phoneNumber;
+        } catch (e) {
+            throw new UnauthorizedException('Invalid or expired verification token');
         }
 
         const user = await this.userRepository.findOne({ where: { phoneNumber } });
@@ -148,10 +169,6 @@ export class AuthService {
 
         user.passwordHash = await bcrypt.hash(newPassword, 10);
         await this.userRepository.save(user);
-
-        // Mark OTP as used
-        validOtp.isUsed = true;
-        await this.otpRepository.save(validOtp);
 
         return { message: 'Password reset successfully' };
     }

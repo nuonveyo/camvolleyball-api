@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength } from 'class-validator';
 
 export class RequestResetPasswordDto {
     @IsString()
@@ -9,13 +9,10 @@ export class RequestResetPasswordDto {
 export class ResetPasswordDto {
     @IsString()
     @IsNotEmpty()
-    phoneNumber: string;
+    verificationToken: string;
 
     @IsString()
     @IsNotEmpty()
-    otp: string;
-
-    @IsString()
-    @IsNotEmpty()
+    @MinLength(6)
     newPassword: string;
 }
