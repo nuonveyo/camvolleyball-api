@@ -6,10 +6,11 @@ import { ProfileModule } from './profile/profile.module';
 import { PostModule } from './post/post.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { FileModule } from './file/file.module';
 import { HeaderMiddleware } from './common/middleware/header.middleware';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule],
   controllers: [AppController],
   providers: [AppService],
 })
