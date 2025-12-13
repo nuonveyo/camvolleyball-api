@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PostServiceService } from './post-service.service';
-import { CreatePostDto, UpdatePostDto, PaginationDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
 
 @Controller()
 export class PostServiceController {
@@ -30,5 +30,20 @@ export class PostServiceController {
   @MessagePattern('remove_post')
   remove(@Payload() payload: { id: string; userId: string }) {
     return this.postService.remove(payload.id, payload.userId);
+  }
+
+  @MessagePattern('add_comment')
+  addComment(@Payload() dto: CreateCommentDto) {
+    return this.postService.addComment(dto);
+  }
+
+  @MessagePattern('toggle_like')
+  toggleLike(@Payload() payload: { postId: string; userId: string }) {
+    return this.postService.toggleLike(payload);
+  }
+
+  @MessagePattern('share_post')
+  sharePost(@Payload() payload: { postId: string; userId: string }) {
+    return this.postService.sharePost(payload);
   }
 }

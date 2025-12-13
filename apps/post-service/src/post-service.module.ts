@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DatabaseModule, Post, User } from '@app/common';
+import { DatabaseModule, Post, User, Comment, Like, Share } from '@app/common';
 import { PostServiceController } from './post-service.controller';
 import { PostServiceService } from './post-service.service';
 
@@ -9,7 +9,7 @@ import { PostServiceService } from './post-service.service';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
-    TypeOrmModule.forFeature([Post, User]),
+    TypeOrmModule.forFeature([Post, User, Comment, Like, Share]),
   ],
   controllers: [PostServiceController],
   providers: [PostServiceService],

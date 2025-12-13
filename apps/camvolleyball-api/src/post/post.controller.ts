@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Put, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { CreatePostDto, UpdatePostDto, PaginationDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('posts')
@@ -36,5 +36,25 @@ export class PostController {
     @Delete(':id')
     remove(@Param('id') id: string, @Request() req) {
         return this.client.send('remove_post', { id, userId: req.user.userId });
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/comments')
+    addComment(@Param('id') id: string, @Body() dto: CreateCommentDto, @Request() req) {
+        dto.postId = id;
+        dto.userId = req.user.userId;
+        return this.client.send('add_comment', dto);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/likes')
+    toggleLike(@Param('id') id: string, @Request() req) {
+        return this.client.send('toggle_like', { postId: id, userId: req.user.userId });
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/shares')
+    sharePost(@Param('id') id: string, @Request() req) {
+        return this.client.send('share_post', { postId: id, userId: req.user.userId });
     }
 }

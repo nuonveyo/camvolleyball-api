@@ -1,6 +1,9 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { User } from './user.entity';
+import { Comment } from './comment.entity';
+import { Like } from './like.entity';
+import { Share } from './share.entity';
 
 @Entity('posts')
 export class Post extends BaseEntity {
@@ -32,4 +35,13 @@ export class Post extends BaseEntity {
     @ManyToOne(() => Post, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'original_post_id' })
     originalPost: Post;
+
+    @OneToMany(() => Comment, (comment) => comment.post)
+    comments: Comment[];
+
+    @OneToMany(() => Like, (like) => like.post)
+    likes: Like[];
+
+    @OneToMany(() => Share, (share) => share.post)
+    shares: Share[];
 }
