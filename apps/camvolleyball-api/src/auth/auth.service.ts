@@ -93,6 +93,14 @@ export class AuthService {
     }
 
     async sendOtp(dto: SendOtpDto) {
+        // [NEW] Logic: Check if user exists for Registration flow
+        if (dto.type === OtpType.VERIFICATION) {
+            const existingUser = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
+            if (existingUser) {
+                throw new BadRequestException('Phone number is already registered');
+            }
+        }
+
         // Generate 6 digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
