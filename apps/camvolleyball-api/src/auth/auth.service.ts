@@ -83,7 +83,7 @@ export class AuthService {
 
         const payload = { sub: user.id, phone: user.phoneNumber, roles: user.roles.map(r => r.name) };
         return {
-            access_token: this.jwtService.sign(payload),
+            accessToken: this.jwtService.sign(payload),
             user: {
                 id: user.id,
                 phoneNumber: user.phoneNumber,
