@@ -4,12 +4,14 @@ import { TransformInterceptor } from '@app/common';
 import { ValidationPipe } from '@nestjs/common';
 import { json, urlencoded } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { HttpExceptionFilter } from '../../../libs/common/src/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.setGlobalPrefix('camvolleyball/v1');
   app.useGlobalInterceptors(new TransformInterceptor());
 
