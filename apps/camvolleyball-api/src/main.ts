@@ -21,7 +21,10 @@ async function bootstrap() {
   });
   app.enableCors();
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }));
   app.useGlobalFilters(new HttpExceptionFilter());
   app.setGlobalPrefix('camvolleyball/v1');
   app.useGlobalInterceptors(new TransformInterceptor());

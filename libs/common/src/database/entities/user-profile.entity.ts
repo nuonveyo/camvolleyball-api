@@ -3,8 +3,8 @@ import { User } from './user.entity';
 
 @Entity('user_profiles')
 export class UserProfile {
-    @PrimaryColumn('uuid')
-    user_id: string;
+    @PrimaryColumn({ name: 'user_id' })
+    userId: string;
 
     @OneToOne(() => User, (user) => user.profile, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })

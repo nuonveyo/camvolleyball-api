@@ -14,7 +14,7 @@ export class ProfileService {
     ) { }
 
     async getProfile(userId: string) {
-        const profile = await this.profileRepository.findOne({ where: { user_id: userId } });
+        const profile = await this.profileRepository.findOne({ where: { userId: userId } });
         const user = await this.userRepository.findOne({
             where: { id: userId },
             relations: ['roles'],
@@ -28,7 +28,7 @@ export class ProfileService {
     }
 
     async updateProfile(userId: string, dto: UpdateProfileDto) {
-        const profile = await this.profileRepository.findOne({ where: { user_id: userId } });
+        const profile = await this.profileRepository.findOne({ where: { userId: userId } });
         if (!profile) {
             // Create if missing? usually created at register
             throw new NotFoundException('Profile not found');

@@ -67,7 +67,7 @@ export class AuthService {
 
         // Create user profile
         const profile = this.profileRepository.create({
-            user_id: newUser.id,
+            userId: newUser.id,
             nickname: registerDto.nickname || `User-${newUser.id.substring(0, 8)}`,
         });
         await this.profileRepository.save(profile);
