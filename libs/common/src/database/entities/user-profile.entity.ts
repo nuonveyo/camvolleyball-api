@@ -43,6 +43,9 @@ export class UserProfile {
     @Column({ nullable: true })
     email: string;
 
+    @Column({ name: 'avatar_url', nullable: true })
+    avatarUrl: string;
+
     @Column({ name: 'current_address', type: 'text', nullable: true })
     currentAddress: string;
 

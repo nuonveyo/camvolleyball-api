@@ -57,6 +57,11 @@ export class UpdateProfileDto {
     @IsEmail()
     email?: string;
 
+    @ApiProperty({ required: false, example: 'https://example.com/avatar.jpg' })
+    @IsOptional()
+    @IsString()
+    avatarUrl?: string;
+
     @ApiProperty({ required: false, example: 'Phnom Penh' })
     @IsOptional()
     @IsString()
