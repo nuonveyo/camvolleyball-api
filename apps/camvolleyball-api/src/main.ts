@@ -6,8 +6,19 @@ import { json, urlencoded } from 'express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from '../../../libs/common/src/filters/http-exception.filter';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // HTTPS Options (Self-Signed for Mobile Dev)
+  const httpsOptions = {
+    key: fs.readFileSync(path.join(process.cwd(), 'key.pem')),
+    cert: fs.readFileSync(path.join(process.cwd(), 'cert.pem')),
+  };
+
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions,
+  });
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe());
