@@ -2,6 +2,7 @@ import { Entity, Column, OneToOne, OneToMany, JoinTable, ManyToMany } from 'type
 import { BaseEntity } from './base.entity';
 import { UserProfile } from './user-profile.entity';
 import { Role } from './role.entity';
+import { UserDevice } from './user-device.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -17,6 +18,9 @@ export class User extends BaseEntity {
     // Relations
     @OneToOne(() => UserProfile, (profile) => profile.user)
     profile: UserProfile;
+
+    @OneToMany(() => UserDevice, (device) => device.user)
+    devices: UserDevice[];
 
     @ManyToMany(() => Role)
     @JoinTable({

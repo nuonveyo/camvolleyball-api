@@ -19,4 +19,12 @@ export class RegisterDto {
     @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...', description: 'Verification token from OTP confirmation' })
     @IsString()
     verificationToken: string;
+
+    @ApiProperty({ example: 'device-12345', description: 'Unique Device ID from Client' })
+    @IsString()
+    deviceId: string;
+
+    @ApiProperty({ example: 'Sokha Volleyball', description: 'User Nickname', required: false })
+    @IsString()
+    nickname: string;
 }

@@ -10,3 +10,4 @@ export * from './like.entity';
 export * from './share.entity';
 export * from './user-follow.entity';
 export * from './notification.entity';
+export * from './user-device.entity';

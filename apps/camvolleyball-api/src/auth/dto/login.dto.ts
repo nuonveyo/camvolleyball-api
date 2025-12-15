@@ -10,4 +10,8 @@ export class LoginDto {
     @IsString()
     @MinLength(6)
     password: string;
+
+    @ApiProperty({ example: 'device-12345', description: 'Unique Device ID from Client' })
+    @IsString()
+    deviceId: string;
 }

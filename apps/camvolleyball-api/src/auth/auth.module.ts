@@ -4,14 +4,14 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { User, OtpCode, UserProfile, Role } from '@app/common';
+import { User, OtpCode, UserProfile, Role, UserDevice } from '@app/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, OtpCode, UserProfile, Role]),
+        TypeOrmModule.forFeature([User, OtpCode, UserProfile, Role, UserDevice]),
         PassportModule,
         ClientsModule.registerAsync([
             {

@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, OtpCode, UserProfile, Role } from '@app/common';
+import { User, OtpCode, UserProfile, Role, UserDevice } from '@app/common';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto, ConfirmOtpDto, OtpType } from './dto/otp.dto';
@@ -21,6 +21,8 @@ export class AuthService {
         private profileRepository: Repository<UserProfile>,
         @InjectRepository(Role)
         private roleRepository: Repository<Role>,
+        @InjectRepository(UserDevice)
+        private deviceRepository: Repository<UserDevice>,
         private jwtService: JwtService,
         @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
     ) { }
@@ -61,17 +63,21 @@ export class AuthService {
             user.roles = [generalRole];
         }
 
-        await this.userRepository.save(user);
+        const newUser = await this.userRepository.save(user);
 
-        // Create empty profile
-        const profile = this.profileRepository.create({ user_id: user.id });
+        // Create user profile
+        const profile = this.profileRepository.create({
+            user_id: newUser.id,
+            nickname: registerDto.nickname || `User-${newUser.id.substring(0, 8)}`,
+        });
         await this.profileRepository.save(profile);
 
-        return this.login({ phoneNumber, password });
+        // Auto-login after registration
+        return this.login({ phoneNumber: newUser.phoneNumber, password: registerDto.password, deviceId: registerDto.deviceId });
     }
 
     async login(loginDto: LoginDto) {
-        const { phoneNumber, password } = loginDto;
+        const { phoneNumber, password, deviceId } = loginDto;
         const user = await this.userRepository.findOne({
             where: { phoneNumber },
             relations: ['roles'],
@@ -81,7 +87,26 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const payload = { sub: user.id, phone: user.phoneNumber, roles: user.roles.map(r => r.name) };
+        if (!user.isActive) {
+            throw new UnauthorizedException('User is not active');
+        }
+
+        // Feature: Track Device
+        let userDevice = await this.deviceRepository.findOne({
+            where: { user_id: user.id, device_id: deviceId }
+        });
+
+        if (userDevice) {
+            userDevice.last_login_at = new Date();
+        } else {
+            userDevice = this.deviceRepository.create({
+                user_id: user.id,
+                device_id: deviceId,
+            });
+        }
+        await this.deviceRepository.save(userDevice);
+
+        const payload = { sub: user.id, phoneNumber: user.phoneNumber, deviceId, roles: user.roles.map(r => r.name) };
         return {
             accessToken: this.jwtService.sign(payload),
             user: {
@@ -93,7 +118,7 @@ export class AuthService {
     }
 
     async sendOtp(dto: SendOtpDto) {
-        // [NEW] Logic: Check if user exists for Registration flow
+        // Check if user exists for Registration flow
         if (dto.type === OtpType.VERIFICATION) {
             const existingUser = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
             if (existingUser) {
@@ -149,9 +174,9 @@ export class AuthService {
     async requestResetPassword(dto: RequestResetPasswordDto) {
         const user = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
         if (!user) {
-            throw new UnauthorizedException('User not found'); // Or silence for security, but usually better to know in dev
+            throw new UnauthorizedException('User not found');
         }
-        // Send OTP (mocked)
+        // Send OTP
         return this.sendOtp({ phoneNumber: dto.phoneNumber, type: OtpType.PASSWORD_RESET });
     }
 
@@ -179,5 +204,19 @@ export class AuthService {
         await this.userRepository.save(user);
 
         return { message: 'Password reset successfully' };
+    }
+
+    async logout(userId: string, deviceId: string) {
+        const userDevice = await this.deviceRepository.findOne({
+            where: { user_id: userId, device_id: deviceId }
+        });
+
+        if (userDevice) {
+            userDevice.is_active = false;
+            await this.deviceRepository.save(userDevice);
+        }
+        // If device not found, technically they are already "logged out" or never logged in.
+        // We can just return success or warn. Returning success is safer for idempotency.
+        return { message: 'Logged out successfully' };
     }
 }

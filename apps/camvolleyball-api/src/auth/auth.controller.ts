@@ -1,10 +1,12 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LogoutDto } from './dto/logout.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SendOtpDto, ConfirmOtpDto } from './dto/otp.dto';
 import { RequestResetPasswordDto, ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -53,5 +55,13 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Password successfully reset' })
     resetPassword(@Body() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto);
+    }
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Logout and deactivate device session' })
+    @ApiResponse({ status: 200, description: 'Logged out successfully' })
+    logout(@Body() logoutDto: LogoutDto, @Req() req) {
+        return this.authService.logout(req.user.userId, logoutDto.deviceId);
     }
 }
