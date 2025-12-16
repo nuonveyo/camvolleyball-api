@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserProfile, User, Post } from '@app/common';
+import { UserProfile, User, Post, UserFollow } from '@app/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 
@@ -14,6 +14,8 @@ export class ProfileService {
         private userRepository: Repository<User>,
         @InjectRepository(Post)
         private postRepository: Repository<Post>,
+        @InjectRepository(UserFollow)
+        private userFollowRepository: Repository<UserFollow>,
     ) { }
 
     async getProfile(userId: string) {
@@ -27,14 +29,26 @@ export class ProfileService {
             throw new NotFoundException('Profile not found');
         }
 
-        const posts = await this.postRepository.find({
-            where: { userId: userId },
-            order: { createdAt: 'DESC' },
-            // relations: [], // No relations needed (raw post data only)
-            take: 20, // Limit to recent 20 for profile view (performance)
-        });
+        const [posts, postCount, followerCount, followingCount] = await Promise.all([
+            this.postRepository.find({
+                where: { userId: userId },
+                order: { createdAt: 'DESC' },
+                // relations: [], // No relations needed (raw post data only)
+                take: 20, // Limit to recent 20 for profile view (performance)
+            }),
+            this.postRepository.count({ where: { userId: userId } }),
+            this.userFollowRepository.count({ where: { followingId: userId } }),
+            this.userFollowRepository.count({ where: { followerId: userId } }),
+        ]);
 
-        return { ...profile, user, posts };
+        return {
+            ...profile,
+            user,
+            posts,
+            postCount,
+            followerCount,
+            followingCount,
+        };
     }
 
     async updateProfile(userId: string, dto: UpdateProfileDto) {
