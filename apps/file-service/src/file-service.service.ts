@@ -91,7 +91,7 @@ export class FileServiceService implements OnModuleInit {
 
       // Determine public URL (for frontend to access later)
       // Use the Public Endpoint for the browser to reach MinIO
-      const publicEndpoint = this.configService.get<string>('AWS_S3_PUBLIC_ENDPOINT') || 'http://localhost:9000';
+      const publicEndpoint = this.configService.get<string>('AWS_S3_PUBLIC_ENDPOINT') || 'http://192.168.1.136:9000';
       const publicUrl = `${publicEndpoint}/${this.bucketName}/${uniqueKey}`;
 
       return {
