@@ -20,10 +20,6 @@ export class ProfileService {
 
     async getProfile(userId: string) {
         const profile = await this.profileRepository.findOne({ where: { userId: userId } });
-        const user = await this.userRepository.findOne({
-            where: { id: userId },
-            relations: ['roles'],
-        });
 
         if (!profile) {
             throw new NotFoundException('Profile not found');
@@ -43,7 +39,6 @@ export class ProfileService {
 
         return {
             ...profile,
-            user,
             posts,
             postCount,
             followerCount,
