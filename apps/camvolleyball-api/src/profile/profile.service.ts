@@ -58,7 +58,12 @@ export class ProfileService {
             throw new NotFoundException('Profile not found');
         }
 
-        Object.assign(profile, dto);
+        // remove null or undefined values
+        const filteredDto = Object.fromEntries(
+            Object.entries(dto).filter(([_, v]) => v !== null && v !== undefined)
+        );
+
+        Object.assign(profile, filteredDto);
         await this.profileRepository.save(profile);
         return profile;
     }
