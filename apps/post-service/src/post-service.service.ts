@@ -124,8 +124,21 @@ export class PostServiceService {
       skip: skippedItems,
     });
 
+    const transformedData = data.map((comment) => {
+      const { user, deletedAt, ...rest } = comment;
+      return {
+        ...rest,
+        profile: {
+          userId: comment.userId,
+          nickname: user?.profile?.nickname || null,
+          avatarUrl: user?.profile?.avatarUrl || null,
+          level: user?.profile?.level || null,
+        },
+      };
+    });
+
     return {
-      data,
+      data: transformedData,
       total,
       page,
       lastPage: Math.ceil(total / limit),
