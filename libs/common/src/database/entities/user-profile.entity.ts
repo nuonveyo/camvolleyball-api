@@ -28,13 +28,27 @@ export class UserProfile {
     @Column({ nullable: true, length: 20 })
     gender: string;
 
-    @Column({ name: 'date_of_birth', type: 'timestamp', nullable: true })
+    @Column({ name: 'date_of_birth', type: 'date', nullable: true })
     dateOfBirth: Date;
 
-    @Column({ name: 'height_cm', type: 'decimal', precision: 5, scale: 2, nullable: true })
+    @Column({
+        name: 'height_cm',
+        type: 'decimal',
+        precision: 5,
+        scale: 2,
+        nullable: true,
+        transformer: { to: (value) => value, from: (value) => parseFloat(value) }
+    })
     heightCm: number;
 
-    @Column({ name: 'weight_kg', type: 'decimal', precision: 5, scale: 2, nullable: true })
+    @Column({
+        name: 'weight_kg',
+        type: 'decimal',
+        precision: 5,
+        scale: 2,
+        nullable: true,
+        transformer: { to: (value) => value, from: (value) => parseFloat(value) }
+    })
     weightKg: number;
 
     @Column({ nullable: true, length: 100 })
