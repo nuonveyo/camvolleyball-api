@@ -1,4 +1,4 @@
-import { IsString, IsPhoneNumber, MinLength } from 'class-validator';
+import { IsString, IsPhoneNumber, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -14,4 +14,9 @@ export class LoginDto {
     @ApiProperty({ example: 'device-12345', description: 'Unique Device ID from Client' })
     @IsString()
     deviceId: string;
+
+    @ApiProperty({ example: 'fcm-token-abc', description: 'FCM Token for Push Notifications', required: false })
+    @IsString()
+    @IsOptional()
+    fcmToken?: string;
 }

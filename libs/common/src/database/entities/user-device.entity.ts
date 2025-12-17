@@ -12,6 +12,9 @@ export class UserDevice {
     @Column({ name: 'device_id' })
     device_id: string;
 
+    @Column({ name: 'fcm_token', nullable: true })
+    fcm_token: string;
+
     @Column({ name: 'last_login_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     last_login_at: Date;
 

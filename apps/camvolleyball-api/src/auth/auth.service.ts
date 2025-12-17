@@ -77,7 +77,7 @@ export class AuthService {
     }
 
     async login(loginDto: LoginDto) {
-        const { phoneNumber, password, deviceId } = loginDto;
+        const { phoneNumber, password, deviceId, fcmToken } = loginDto;
         const user = await this.userRepository.findOne({
             where: { phoneNumber },
             relations: ['roles'],
@@ -98,10 +98,13 @@ export class AuthService {
 
         if (userDevice) {
             userDevice.last_login_at = new Date();
+            userDevice.is_active = true;
+            if (fcmToken) userDevice.fcm_token = fcmToken; // Update Token
         } else {
             userDevice = this.deviceRepository.create({
                 user_id: user.id,
                 device_id: deviceId,
+                fcm_token: fcmToken,
             });
         }
         await this.deviceRepository.save(userDevice);
