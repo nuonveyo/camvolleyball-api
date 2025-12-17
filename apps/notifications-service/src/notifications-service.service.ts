@@ -66,10 +66,8 @@ export class NotificationsServiceService implements OnModuleInit {
 
   private async sendPushNotification(recipientId: string, notification: Notification) {
     try {
-      this.logger.log(`[Push] Preparing to send to user: ${recipientId}`);
-
       if (admin.apps.length === 0) {
-        this.logger.warn('[Push] Firebase not initialized. Skipping.');
+        this.logger.warn('Firebase not initialized. Skipping push notification.');
         return;
       }
 
@@ -82,15 +80,12 @@ export class NotificationsServiceService implements OnModuleInit {
         },
       });
 
-      this.logger.log(`[Push] Found ${devices.length} active devices for user ${recipientId}`);
-
       if (devices.length === 0) {
-        this.logger.debug(`[Push] No active devices found for user ${recipientId}`);
+        this.logger.debug(`No active devices found for user ${recipientId}`);
         return;
       }
 
       const tokens = [...new Set(devices.map(d => d.fcm_token))];
-      this.logger.log(`[Push] Target Tokens: ${JSON.stringify(tokens)}`);
 
       // 2. Construct message
       let title = 'New Notification';
@@ -109,8 +104,6 @@ export class NotificationsServiceService implements OnModuleInit {
         body = notification.message;
       }
 
-      this.logger.log(`[Push] Message Payload - Title: ${title}, Body: ${body}`);
-
       const message: admin.messaging.MulticastMessage = {
         tokens: tokens,
         notification: {
@@ -126,28 +119,20 @@ export class NotificationsServiceService implements OnModuleInit {
 
       // 3. Send
       const response = await admin.messaging().sendEachForMulticast(message);
-      this.logger.log(`[Push] Firebase Response: Success=${response.successCount}, Failure=${response.failureCount}`);
-
-      if (response.failureCount > 0) {
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            this.logger.error(`[Push] Failure Detail for token ${tokens[idx]}: ${JSON.stringify(resp.error)}`);
-          }
-        });
-      }
+      this.logger.log(`Push notification sent: ${response.successCount} successes, ${response.failureCount} failures`);
 
       // Optional: Handle invalid tokens (cleanup logic remains same)
       if (response.failureCount > 0) {
         response.responses.forEach((resp, idx) => {
           if (!resp.success && (resp.error?.code === 'messaging/registration-token-not-registered' || resp.error?.code === 'messaging/invalid-registration-token')) {
-            this.logger.warn(`[Push] Invalid token detected: ${tokens[idx]}`);
+            this.logger.warn(`Invalid token detected: ${tokens[idx]}`);
             // potential cleanup here
           }
         });
       }
 
     } catch (error) {
-      this.logger.error('[Push] Failed to send push notification', error);
+      this.logger.error('Failed to send push notification', error);
     }
   }
 
