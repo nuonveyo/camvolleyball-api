@@ -1,17 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification, NotificationType } from '@app/common';
+import { Notification, NotificationType, UserDevice } from '@app/common';
 import { NotificationsGateway } from './notifications.gateway';
+import * as admin from 'firebase-admin';
 
 @Injectable()
-export class NotificationsServiceService {
+export class NotificationsServiceService implements OnModuleInit {
+  private readonly logger = new Logger(NotificationsServiceService.name);
+
   constructor(
     @InjectRepository(Notification)
     private notificationRepository: Repository<Notification>,
+    @InjectRepository(UserDevice)
+    private userDeviceRepository: Repository<UserDevice>,
     private readonly notificationsGateway: NotificationsGateway,
   ) { }
+
+  async onModuleInit() {
+    this.initializeFirebase();
+  }
+
+  private initializeFirebase() {
+    if (admin.apps.length === 0) {
+      try {
+        const credentialConfig: admin.ServiceAccount = {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'), // Handle newline characters
+        };
+
+        if (credentialConfig.projectId && credentialConfig.clientEmail && credentialConfig.privateKey) {
+          admin.initializeApp({
+            credential: admin.credential.cert(credentialConfig),
+          });
+          this.logger.log('Firebase Admin initialized successfully');
+        } else {
+          this.logger.warn('Firebase credentials missing. Push notifications will not be sent.');
+        }
+      } catch (error) {
+        this.logger.error('Error initializing Firebase Admin:', error);
+      }
+    }
+  }
 
   async createNotification(payload: {
     recipientId: string;
@@ -23,18 +55,103 @@ export class NotificationsServiceService {
     const notification = this.notificationRepository.create(payload);
     const saved = await this.notificationRepository.save(notification);
 
-    // Emit Real-time
+    // Emit Real-time (Socket.io)
     this.notificationsGateway.emitToUser(payload.recipientId, 'notification', saved);
+
+    // Send Push Notification (Firebase)
+    await this.sendPushNotification(payload.recipientId, saved);
 
     return saved;
   }
 
+  private async sendPushNotification(recipientId: string, notification: Notification) {
+    try {
+      if (admin.apps.length === 0) {
+        this.logger.warn('Firebase not initialized. Skipping push notification.');
+        return;
+      }
+
+      // 1. Get active user devices
+      const devices = await this.userDeviceRepository.find({
+        where: { user_id: recipientId, is_active: true },
+      });
+
+      if (devices.length === 0) {
+        this.logger.debug(`No active devices found for user ${recipientId}`);
+        return;
+      }
+
+      const tokens = devices.map(d => d.device_id); // Assuming device_id stores the FCM token
+
+      // 2. Construct message
+      let title = 'New Notification';
+      let body = notification.message || 'You have a new interaction';
+
+      // Customize based on type if needed
+      if (notification.type === NotificationType.LIKE) {
+        title = 'New Like';
+      } else if (notification.type === NotificationType.COMMENT) {
+        title = 'New Comment';
+      } else if (notification.type === NotificationType.SHARE) {
+        title = 'New Share';
+      }
+
+      if (notification.message) {
+        body = notification.message;
+      }
+
+      const message: admin.messaging.MulticastMessage = {
+        tokens: tokens,
+        notification: {
+          title,
+          body,
+        },
+        data: {
+          type: notification.type,
+          entityId: notification.entityId || '',
+          notificationId: notification.id,
+        },
+      };
+
+      // 3. Send
+      const response = await admin.messaging().sendEachForMulticast(message);
+      this.logger.log(`Push notification sent: ${response.successCount} successes, ${response.failureCount} failures`);
+
+      // Optional: Handle invalid tokens (cleanup)
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success && (resp.error?.code === 'messaging/registration-token-not-registered' || resp.error?.code === 'messaging/invalid-registration-token')) {
+            // Logic to remove invalid token from DB could go here
+            // this.userDeviceRepository.delete({ device_id: tokens[idx] });
+            this.logger.warn(`Invalid token detected: ${tokens[idx]}`);
+          }
+        });
+      }
+
+    } catch (error) {
+      this.logger.error('Failed to send push notification', error);
+    }
+  }
+
   async getUserNotifications(userId: string) {
-    return this.notificationRepository.find({
+    const notifications = await this.notificationRepository.find({
       where: { recipientId: userId },
       order: { createdAt: 'DESC' },
-      relations: ['actor', 'actor.profile'], // Show who triggered it
+      relations: ['actor', 'actor.profile'],
       take: 20,
+    });
+
+    return notifications.map(notification => {
+      const { actor, ...rest } = notification;
+      return {
+        ...rest,
+        actor: {
+          userId: actor?.id,
+          nickname: actor?.profile?.nickname || 'Unknown',
+          avatarUrl: actor?.profile?.avatarUrl || null,
+          level: actor?.profile?.level || null
+        }
+      };
     });
   }
 

@@ -3,7 +3,7 @@ import { NotificationsServiceController } from './notifications-service.controll
 import { NotificationsServiceService } from './notifications-service.service';
 import { NotificationsGateway } from './notifications.gateway';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { DatabaseModule, Notification, User } from '@app/common';
+import { DatabaseModule, Notification, User, UserDevice } from '@app/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -11,7 +11,7 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
-    TypeOrmModule.forFeature([Notification, User]), // User needed for relations? Maybe just Notification if we only save ID
+    TypeOrmModule.forFeature([Notification, User, UserDevice]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

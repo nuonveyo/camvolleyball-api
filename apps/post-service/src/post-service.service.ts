@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, ArrayContains, Raw, In } from 'typeorm';
-import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto } from '@app/common';
+import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto, NotificationType } from '@app/common';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PostServiceService {
@@ -16,6 +17,7 @@ export class PostServiceService {
     private likeRepository: Repository<Like>,
     @InjectRepository(Share)
     private shareRepository: Repository<Share>,
+    @Inject('NOTIFICATIONS_SERVICE') private notificationsClient: ClientProxy,
   ) { }
 
   async create(dto: CreatePostDto) {
@@ -48,8 +50,6 @@ export class PostServiceService {
 
     // Followed posts (visible if I follow author)
     if (followingIds && followingIds.length > 0) {
-      // Need to check authorId IN (followingIds) AND visibility = 'followers'
-      // TypeORM In() import needed
       where.push({
         ...baseCondition,
         visibility: 'followers',
@@ -109,6 +109,21 @@ export class PostServiceService {
     // Update count
     await this.postRepository.increment({ id: dto.postId }, 'commentsCount', 1);
 
+    // Notify Post Owner
+    const post = await this.postRepository.findOne({ where: { id: dto.postId } });
+    if (post && post.userId !== dto.userId) {
+      const actor = await this.userRepository.findOne({ where: { id: dto.userId }, relations: ['profile'] });
+      const nickname = actor?.profile?.nickname || 'Someone';
+
+      this.notificationsClient.emit('notify_user', {
+        recipientId: post.userId,
+        actorId: dto.userId,
+        type: NotificationType.COMMENT,
+        entityId: dto.postId,
+        message: `${nickname} comment on your post`,
+      });
+    }
+
     return saved;
   }
 
@@ -156,6 +171,22 @@ export class PostServiceService {
       const like = this.likeRepository.create({ postId: dto.postId, userId: dto.userId });
       await this.likeRepository.save(like);
       await this.postRepository.increment({ id: dto.postId }, 'likesCount', 1);
+
+      // Notify Post Owner
+      const post = await this.postRepository.findOne({ where: { id: dto.postId } });
+      if (post && post.userId !== dto.userId) {
+        const actor = await this.userRepository.findOne({ where: { id: dto.userId }, relations: ['profile'] });
+        const nickname = actor?.profile?.nickname || 'Someone';
+
+        this.notificationsClient.emit('notify_user', {
+          recipientId: post.userId,
+          actorId: dto.userId,
+          type: NotificationType.LIKE,
+          entityId: dto.postId,
+          message: `${nickname} like your post`,
+        });
+      }
+
       return { liked: true };
     }
   }
@@ -164,6 +195,22 @@ export class PostServiceService {
     const share = this.shareRepository.create({ postId: dto.postId, userId: dto.userId });
     await this.shareRepository.save(share);
     await this.postRepository.increment({ id: dto.postId }, 'sharesCount', 1);
+
+    // Notify Post Owner
+    const post = await this.postRepository.findOne({ where: { id: dto.postId } });
+    if (post && post.userId !== dto.userId) {
+      const actor = await this.userRepository.findOne({ where: { id: dto.userId }, relations: ['profile'] });
+      const nickname = actor?.profile?.nickname || 'Someone';
+
+      this.notificationsClient.emit('notify_user', {
+        recipientId: post.userId,
+        actorId: dto.userId,
+        type: NotificationType.SHARE,
+        entityId: dto.postId,
+        message: `${nickname} share your post`,
+      });
+    }
+
     return share;
   }
 }
