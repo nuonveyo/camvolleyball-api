@@ -83,7 +83,7 @@ export class PostController {
     @Post(':id') // Using Post for update
     @ApiOperation({ summary: 'Update a post' })
     @ApiResponse({ status: 200, description: 'Post updated' })
-    update(@Param('id') id: string, @Body() dto: UpdatePostDto, @Request() req) {
+    async update(@Param('id') id: string, @Body() dto: UpdatePostDto, @Request() req) {
         dto.id = id;
         dto.userId = req.user.userId;
         return this.client.send('update_post', dto);

@@ -25,6 +25,7 @@ export class PostServiceService {
       userId: dto.userId,
       contents: dto.contents,
       tags: dto.tags,
+      visibility: dto.visibility,
     });
     return this.postRepository.save(post);
   }
