@@ -73,6 +73,7 @@ export class CreatePostDto {
 
 export class UpdatePostDto {
     @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', description: 'Post ID' })
+    @IsOptional()
     @IsUUID()
     id: string;
 
