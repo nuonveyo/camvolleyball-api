@@ -88,6 +88,11 @@ export class UpdatePostDto {
     @IsString({ each: true })
     tags?: string[];
 
+    @ApiProperty({ enum: ['public', 'followers'], required: false, example: 'public' })
+    @IsOptional()
+    @IsEnum(['public', 'followers'])
+    visibility?: 'public' | 'followers';
+
     @ApiProperty({ required: false, description: 'Injected by Controller' })
     @IsOptional()
     @IsUUID()

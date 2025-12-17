@@ -87,6 +87,7 @@ export class PostServiceService {
     }
     if (dto.contents) post.contents = dto.contents;
     if (dto.tags) post.tags = dto.tags;
+    if (dto.visibility) post.visibility = dto.visibility;
     return this.postRepository.save(post);
   }
 
