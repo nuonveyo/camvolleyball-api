@@ -26,20 +26,29 @@ export class ProfileService {
         }
 
         const [posts, postCount, followerCount, followingCount] = await Promise.all([
-            this.postRepository.find({
-                where: { userId: userId },
-                order: { createdAt: 'DESC' },
-                // relations: [], // No relations needed (raw post data only)
-                take: 20, // Limit to recent 20 for profile view (performance)
-            }),
+            this.postRepository.createQueryBuilder('post')
+                .where('post.userId = :userId', { userId })
+                .andWhere(
+                    "(post.contents->'images' IS NOT NULL AND jsonb_typeof(post.contents->'images') = 'array' AND jsonb_array_length(post.contents->'images') > 0) OR (post.contents->'videos' IS NOT NULL AND jsonb_typeof(post.contents->'videos') = 'array' AND jsonb_array_length(post.contents->'videos') > 0)"
+                )
+                .orderBy('post.createdAt', 'DESC')
+                .take(20)
+                .getMany(),
             this.postRepository.count({ where: { userId: userId } }),
             this.userFollowRepository.count({ where: { followingId: userId } }),
             this.userFollowRepository.count({ where: { followerId: userId } }),
         ]);
 
+        const { deletedAt, ...profileData } = profile;
+
+        const sanitizedPosts = posts.map(post => {
+            const { deletedAt, ...postData } = post;
+            return postData;
+        });
+
         return {
-            ...profile,
-            posts,
+            ...profileData,
+            posts: sanitizedPosts,
             postCount,
             followerCount,
             followingCount,
