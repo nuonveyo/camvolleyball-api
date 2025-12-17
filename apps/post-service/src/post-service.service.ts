@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, ArrayContains, Raw, In } from 'typeorm';
-import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto, NotificationType } from '@app/common';
+import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto, NotificationType, CreateShareDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
@@ -193,8 +193,12 @@ export class PostServiceService {
     }
   }
 
-  async sharePost(dto: { postId: string, userId: string }) {
-    const share = this.shareRepository.create({ postId: dto.postId, userId: dto.userId });
+  async sharePost(dto: CreateShareDto) {
+    const share = this.shareRepository.create({
+      postId: dto.postId,
+      userId: dto.userId,
+      description: dto.description,
+    });
     await this.shareRepository.save(share);
     await this.postRepository.increment({ id: dto.postId }, 'sharesCount', 1);
 

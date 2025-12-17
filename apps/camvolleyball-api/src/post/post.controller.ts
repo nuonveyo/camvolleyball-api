@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
-import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto, CreateShareDto } from '@app/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SocialService } from '../social/social.service';
 import { JwtService } from '@nestjs/jwt';
@@ -132,7 +132,9 @@ export class PostController {
     @Post(':id/shares')
     @ApiOperation({ summary: 'Share a post' })
     @ApiResponse({ status: 201, description: 'Post shared' })
-    sharePost(@Param('id') id: string, @Request() req) {
-        return this.client.send('share_post', { postId: id, userId: req.user.userId });
+    async sharePost(@Param('id') id: string, @Body() dto: CreateShareDto, @Request() req) { // Changed to use DTO
+        dto.postId = id;
+        dto.userId = req.user.userId;
+        return this.client.send('share_post', dto);
     }
 }

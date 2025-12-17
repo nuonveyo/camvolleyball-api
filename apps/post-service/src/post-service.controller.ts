@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PostServiceService } from './post-service.service';
-import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto } from '@app/common';
+import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto, CreateShareDto } from '@app/common';
 
 @Controller()
 export class PostServiceController {
@@ -48,7 +48,7 @@ export class PostServiceController {
   }
 
   @MessagePattern('share_post')
-  sharePost(@Payload() payload: { postId: string; userId: string }) {
-    return this.postService.sharePost(payload);
+  sharePost(@Payload() dto: CreateShareDto) {
+    return this.postService.sharePost(dto);
   }
 }

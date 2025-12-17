@@ -99,3 +99,20 @@ export class UpdatePostDto {
     @IsUUID()
     userId: string; // Authenticated user
 }
+
+export class CreateShareDto {
+    @ApiProperty({ required: false, description: 'Optional description for the shared post' })
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @ApiProperty({ required: false, description: 'Injected by Controller' })
+    @IsOptional()
+    @IsUUID()
+    postId: string;
+
+    @ApiProperty({ required: false, description: 'Injected by Controller' })
+    @IsOptional()
+    @IsUUID()
+    userId: string;
+}

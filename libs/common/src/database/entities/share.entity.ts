@@ -18,4 +18,7 @@ export class Share extends BaseEntity {
     @ManyToOne(() => Post, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: Post;
+
+    @Column({ type: 'text', nullable: true })
+    description: string;
 }
