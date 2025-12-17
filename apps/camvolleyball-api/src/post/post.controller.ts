@@ -106,17 +106,7 @@ export class PostController {
         dto.userId = req.user.userId;
         const comment = await this.client.send('add_comment', dto).toPromise();
 
-        // Fetch post to get owner
-        const post = await this.client.send('find_one_post', id).toPromise();
-        if (post && post.userId !== req.user.userId) {
-            this.notificationsClient.emit('notify_user', {
-                recipientId: post.userId,
-                actorId: req.user.userId,
-                type: 'COMMENT',
-                entityId: id,
-                message: 'commented on your post',
-            });
-        }
+        // Notification handled by PostService
         return comment;
     }
 
@@ -134,18 +124,7 @@ export class PostController {
     async toggleLike(@Param('id') id: string, @Request() req) {
         const result = await this.client.send('toggle_like', { postId: id, userId: req.user.userId }).toPromise();
 
-        if (result.liked) {
-            const post = await this.client.send('find_one_post', id).toPromise();
-            if (post && post.userId !== req.user.userId) {
-                this.notificationsClient.emit('notify_user', {
-                    recipientId: post.userId,
-                    actorId: req.user.userId,
-                    type: 'LIKE',
-                    entityId: id,
-                    message: 'liked your post',
-                });
-            }
-        }
+        // Notification handled by PostService
         return result;
     }
 
