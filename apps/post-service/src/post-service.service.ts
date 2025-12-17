@@ -61,13 +61,53 @@ export class PostServiceService {
     const [data, total] = await this.postRepository.findAndCount({
       where,
       order: { createdAt: 'DESC' },
-      relations: ['user', 'user.profile'],
+      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile'],
       take: limit,
       skip: skippedItems,
     });
 
+    const mappedData = data.map(post => {
+      const { user, originalPost, deletedAt, userId, ...rest } = post; // Exclude deletedAt, userId
+
+      let mappedOriginalPost: any = null;
+      if (originalPost) {
+        const { user: originalUser, deletedAt: originalDeletedAt, userId: originalUserId, ...originalRest } = originalPost; // Exclude deletedAt, userId
+        const originalProfile = originalUser?.profile;
+        mappedOriginalPost = {
+          ...originalRest,
+          profile: originalProfile ? {
+            userId: originalProfile.userId,
+            firstName: originalProfile.firstName,
+            lastName: originalProfile.lastName,
+            nickname: originalProfile.nickname,
+            bio: originalProfile.bio,
+            level: originalProfile.level,
+            position: originalProfile.position,
+            avatarUrl: originalProfile.avatarUrl,
+          } : null
+        };
+      }
+
+      const userProfile = user?.profile;
+
+      return {
+        ...rest,
+        profile: userProfile ? {
+          userId: userProfile.userId,
+          firstName: userProfile.firstName,
+          lastName: userProfile.lastName,
+          nickname: userProfile.nickname,
+          bio: userProfile.bio,
+          level: userProfile.level,
+          position: userProfile.position,
+          avatarUrl: userProfile.avatarUrl, // Including avatarUrl as it is critical for UI
+        } : null,
+        originalPost: mappedOriginalPost
+      };
+    });
+
     return {
-      data,
+      data: mappedData,
       total,
       page,
       lastPage: Math.ceil(total / limit),
@@ -194,22 +234,42 @@ export class PostServiceService {
   }
 
   async sharePost(dto: CreateShareDto) {
+    // 1. Verify original post exists
+    const originalPost = await this.postRepository.findOne({ where: { id: dto.postId } });
+    if (!originalPost) {
+      throw new Error('Original post not found');
+    }
+
+    // 2. Create the Share record (for analytics/history)
     const share = this.shareRepository.create({
       postId: dto.postId,
       userId: dto.userId,
       description: dto.description,
     });
     await this.shareRepository.save(share);
+
+    // 3. Create a NEW Post to represent this share in the feed
+    // This allows the share to appear in timelines just like a normal post
+    const newPost = this.postRepository.create({
+      userId: dto.userId,
+      originalPostId: dto.postId,
+      contents: dto.description ? { text: dto.description } : null,
+      visibility: 'public', // Default to public for shares for now
+      tags: [], // Could copy tags if needed, but leaving empty for now
+    });
+    await this.postRepository.save(newPost);
+
+    // 4. Update stats on original post
     await this.postRepository.increment({ id: dto.postId }, 'sharesCount', 1);
 
-    // Notify Post Owner
-    const post = await this.postRepository.findOne({ where: { id: dto.postId } });
-    if (post && post.userId !== dto.userId) {
+    // 5. Notify Post Owner
+    // const post = await this.postRepository.findOne({ where: { id: dto.postId } }); // Already have originalPost
+    if (originalPost && originalPost.userId !== dto.userId) {
       const actor = await this.userRepository.findOne({ where: { id: dto.userId }, relations: ['profile'] });
       const nickname = actor?.profile?.nickname || 'Someone';
 
       this.notificationsClient.emit('notify_user', {
-        recipientId: post.userId,
+        recipientId: originalPost.userId, // Use originalPost.userId directly
         actorId: dto.userId,
         type: NotificationType.SHARE,
         entityId: dto.postId,
