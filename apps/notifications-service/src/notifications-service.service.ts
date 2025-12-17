@@ -56,7 +56,7 @@ export class NotificationsServiceService implements OnModuleInit {
     const saved = await this.notificationRepository.save(notification);
 
     // Emit Real-time (Socket.io)
-    // this.notificationsGateway.emitToUser(payload.recipientId, 'notification', saved);
+    this.notificationsGateway.emitToUser(payload.recipientId, 'notification', saved);
 
     // Send Push Notification (Firebase)
     await this.sendPushNotification(payload.recipientId, saved);
