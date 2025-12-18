@@ -1,0 +1,139 @@
+version: '3.8'
+
+services:
+  # -------------------------------------------------------------------------
+  # API Gateway (Public-facing)
+  # -------------------------------------------------------------------------
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/camvolleyball-api/Dockerfile
+    container_name: camvolleyball_gateway
+    ports:
+      - "3000:3000"
+    environment:
+      # Database
+      DATABASE_HOST: postgres_prod # or the Oracle DB IP
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      # Microservices
+      POST_SERVICE_HOST: post-service
+      POST_SERVICE_PORT: 3001
+      NOTIFICATIONS_SERVICE_HOST: notifications-service
+      NOTIFICATIONS_SERVICE_PORT: 3002
+      FILE_SERVICE_HOST: file-service
+      FILE_SERVICE_PORT: 3003
+      # Others
+      NODE_ENV: production
+    depends_on:
+      - postgres_prod
+      - post-service
+      - notifications-service
+      - file-service
+    networks:
+      - backend-network
+
+  # -------------------------------------------------------------------------
+  # Microservices (Private Network)
+  # -------------------------------------------------------------------------
+  post-service:
+    build:
+      context: .
+      dockerfile: apps/post-service/Dockerfile
+    container_name: camvolleyball_post_service
+    environment:
+      DATABASE_HOST: postgres_prod
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB}
+      # Listen on internal port
+      PORT: 3001
+      NODE_ENV: production
+    networks:
+      - backend-network
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: apps/notifications-service/Dockerfile
+    container_name: camvolleyball_notifications_service
+    environment:
+      DATABASE_HOST: postgres_prod
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB}
+      PORT: 3002
+      NODE_ENV: production
+      # Google / Firebase
+      GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-service-account.json
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+    networks:
+      - backend-network
+
+  file-service:
+    build:
+      context: .
+      dockerfile: apps/file-service/Dockerfile
+    container_name: camvolleyball_file_service
+    environment:
+      PORT: 3003
+      NODE_ENV: production
+      # MinIO / S3 Config
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+      AWS_S3_BUCKET_NAME: camvolleyball-uploads
+      # If using MinIO container below
+      AWS_S3_ENDPOINT: http://minio_prod:9000
+      AWS_S3_PUBLIC_ENDPOINT: https://files.camvolleyball.com # Example domain
+    depends_on:
+      - minio_prod
+    networks:
+      - backend-network
+
+  # -------------------------------------------------------------------------
+  # Infrastructure (Database & Storage)
+  # -------------------------------------------------------------------------
+  postgres_prod:
+    image: postgres:15
+    container_name: camvolleyball_postgres_prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    # In production with Oracle Managed DB, you might remove this service
+    # and point DATABASE_HOST to the Oracle ATP Endpoint.
+
+  minio_prod:
+    image: minio/minio
+    container_name: camvolleyball_minio_prod
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data_prod:/data
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
+  minio_data_prod:
