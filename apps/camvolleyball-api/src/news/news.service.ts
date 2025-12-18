@@ -13,7 +13,7 @@ export class NewsService {
 
     async findAll() {
         return this.newsRepository.find({
-            order: { createdAt: 'DESC' },
+            order: { postDate: 'DESC' },
             take: 20,
         });
     }
