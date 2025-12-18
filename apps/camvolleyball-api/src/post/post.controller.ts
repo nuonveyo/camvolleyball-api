@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Delete, Inject, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Inject, UseGuards, Request, Query, UseInterceptors } from '@nestjs/common';
+import { HttpCacheInterceptor } from '../common/interceptors/http-cache.interceptor';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
 import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto, CreateShareDto } from '@app/common';
@@ -42,6 +43,7 @@ export class PostController {
     }
 
     @Get()
+    @UseInterceptors(HttpCacheInterceptor)
     @ApiOperation({ summary: 'List all posts with pagination' })
     @ApiResponse({ status: 200, description: 'Return paginated posts' })
     @ApiQuery({ name: 'page', required: false })
