@@ -12,9 +12,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { NewsModule } from './news/news.module';
+import { CourtModule } from './court/court.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule, SocialModule, NotificationsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuthModule, ProfileModule, PostModule, FileModule, SocialModule, NotificationsModule, NewsModule, CourtModule],
   controllers: [AppController],
   providers: [AppService],
 })

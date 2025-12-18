@@ -26,6 +26,7 @@ export class PostServiceService {
       contents: dto.contents,
       tags: dto.tags,
       visibility: dto.visibility,
+      courtId: dto.courtId,
     });
     return this.postRepository.save(post);
   }
@@ -61,7 +62,7 @@ export class PostServiceService {
     const [data, total] = await this.postRepository.findAndCount({
       where,
       order: { createdAt: 'DESC' },
-      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile'],
+      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'court'],
       take: limit,
       skip: skippedItems,
     });
@@ -117,7 +118,7 @@ export class PostServiceService {
   async findOne(id: string) {
     return this.postRepository.findOne({
       where: { id },
-      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile'],
+      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile', 'court'],
     });
   }
 

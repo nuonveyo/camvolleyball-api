@@ -69,6 +69,11 @@ export class CreatePostDto {
     @IsOptional()
     @IsUUID()
     userId: string; // Passed from Gateway
+
+    @ApiProperty({ required: false, description: 'Optional ID of the court this post refers to' })
+    @IsOptional()
+    @IsUUID()
+    courtId?: string;
 }
 
 export class UpdatePostDto {

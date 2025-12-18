@@ -4,6 +4,7 @@ import { User } from './user.entity';
 import { Comment } from './comment.entity';
 import { Like } from './like.entity';
 import { Share } from './share.entity';
+import { Court } from './court.entity';
 
 @Entity('posts')
 export class Post extends BaseEntity {
@@ -38,6 +39,13 @@ export class Post extends BaseEntity {
     @ManyToOne(() => Post, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'original_post_id' })
     originalPost: Post;
+
+    @Column({ name: 'court_id', nullable: true })
+    courtId: string;
+
+    @ManyToOne(() => Court)
+    @JoinColumn({ name: 'court_id' })
+    court: Court;
 
     @OneToMany(() => Comment, (comment) => comment.post)
     comments: Comment[];

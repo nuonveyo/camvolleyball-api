@@ -11,3 +11,6 @@ export * from './share.entity';
 export * from './user-follow.entity';
 export * from './notification.entity';
 export * from './user-device.entity';
+export * from './news.entity';
+export * from './court.entity';
+export * from './court-availability.entity';
