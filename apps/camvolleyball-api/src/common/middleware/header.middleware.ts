@@ -12,8 +12,8 @@ export class HeaderMiddleware implements NestMiddleware {
 
         if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
             const contentType = req.headers['content-type'];
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new BadRequestException('Content-Type must be application/json');
+            if (!contentType || !contentType.toLowerCase().includes('application/json')) {
+                throw new BadRequestException('Content-Type must be application/json;charset=UTF-8');
             }
         }
 
