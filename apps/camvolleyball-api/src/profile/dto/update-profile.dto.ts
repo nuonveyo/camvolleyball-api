@@ -1,5 +1,6 @@
-import { IsString, IsOptional, IsNumber, IsDateString, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDateString, IsEmail, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Sector } from '@app/common/database/enums/sector.enum';
 
 export class UpdateProfileDto {
     @ApiProperty({ required: false, example: 'John' })
@@ -71,4 +72,10 @@ export class UpdateProfileDto {
     @IsOptional()
     @IsString()
     level?: string;
+
+    @ApiProperty({ enum: Sector, isArray: true, required: false, example: ['SPORTS', 'TOURISM'] })
+    @IsOptional()
+    @IsArray()
+    @IsEnum(Sector, { each: true })
+    interestedSectors?: Sector[];
 }

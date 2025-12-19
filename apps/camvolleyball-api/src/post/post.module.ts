@@ -1,30 +1,40 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PostController } from './post.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { AuthModule } from '../auth/auth.module';
 import { SocialModule } from '../social/social.module';
+import { ProfileModule } from '../profile/profile.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
-        AuthModule,
+        ConfigModule,
         SocialModule,
-        ClientsModule.register([
+        ProfileModule,
+        AuthModule,
+        ClientsModule.registerAsync([
             {
                 name: 'POST_SERVICE',
-                transport: Transport.TCP,
-                options: {
-                    host: '127.0.0.1',
-                    port: 3001,
-                },
+                useFactory: (configService: ConfigService) => ({
+                    transport: Transport.TCP,
+                    options: {
+                        host: configService.get('POST_SERVICE_HOST') || '127.0.0.1',
+                        port: parseInt(configService.get('POST_SERVICE_PORT') || '3001'),
+                    },
+                }),
+                inject: [ConfigService],
             },
             {
                 name: 'NOTIFICATIONS_SERVICE',
-                transport: Transport.TCP,
-                options: {
-                    host: '127.0.0.1',
-                    port: 3004,
-                },
+                useFactory: (configService: ConfigService) => ({
+                    transport: Transport.TCP,
+                    options: {
+                        host: configService.get('NOTIFICATIONS_SERVICE_HOST') || '127.0.0.1',
+                        port: parseInt(configService.get('NOTIFICATIONS_SERVICE_PORT') || '3004'),
+                    },
+                }),
+                inject: [ConfigService],
             },
         ]),
     ],

@@ -4,12 +4,20 @@ import { User } from './user.entity';
 import { Comment } from './comment.entity';
 import { Like } from './like.entity';
 import { Share } from './share.entity';
-import { Court } from './court.entity';
+import { Venue } from './venue.entity';
+import { Sector } from '../enums/sector.enum';
 
 @Entity('posts')
 export class Post extends BaseEntity {
     @Column({ name: 'user_id' })
     userId: string;
+
+    @Column({
+        type: 'enum',
+        enum: Sector,
+        default: Sector.SPORTS,
+    })
+    sector: Sector;
 
     @ManyToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'user_id' })
@@ -40,12 +48,12 @@ export class Post extends BaseEntity {
     @JoinColumn({ name: 'original_post_id' })
     originalPost: Post;
 
-    @Column({ name: 'court_id', nullable: true })
-    courtId: string;
+    @Column({ name: 'venue_id', nullable: true })
+    venueId: string;
 
-    @ManyToOne(() => Court)
-    @JoinColumn({ name: 'court_id' })
-    court: Court;
+    @ManyToOne(() => Venue)
+    @JoinColumn({ name: 'venue_id' })
+    venue: Venue;
 
     @OneToMany(() => Comment, (comment) => comment.post)
     comments: Comment[];

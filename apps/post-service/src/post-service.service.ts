@@ -26,31 +26,37 @@ export class PostServiceService {
       contents: dto.contents,
       tags: dto.tags,
       visibility: dto.visibility,
-      courtId: dto.courtId,
+      venueId: dto.venueId,
+      sector: dto.sector,
     });
     return this.postRepository.save(post);
   }
 
-  async findAll(payload: PaginationDto & { userId?: string, followingIds?: string[] }) {
-    const { page = 1, limit = 10, search, tag, userId, followingIds } = payload;
+  async findAll(payload: PaginationDto & { userId?: string, followingIds?: string[], interestedSectors?: string[] }) {
+    const { page = 1, limit = 10, search, tag, userId, followingIds, interestedSectors } = payload;
     const skippedItems = (page - 1) * limit;
 
-    const where: FindOptionsWhere<Post> | FindOptionsWhere<Post>[] = [];
-
-    // Base conditions
     const baseCondition: FindOptionsWhere<Post> = {};
     if (tag) baseCondition.tags = ArrayContains([tag]);
     if (search) baseCondition.contents = Raw((alias) => `${alias}->>'text' ILIKE :search`, { search: `%${search}%` });
 
-    // Public posts
+    // NEW: Sector Filter
+    if (interestedSectors && interestedSectors.length > 0) {
+      // Cast to any to avoid TypeORM strict enum checks if needed
+      baseCondition.sector = In(interestedSectors as any);
+    }
+
+    const where: FindOptionsWhere<Post>[] = [];
+
+    // 1. Public Posts
     where.push({ ...baseCondition, visibility: 'public' });
 
-    // My posts (always visible to me)
+    // 2. My posts (always visible to me)
     if (userId) {
       where.push({ ...baseCondition, userId });
     }
 
-    // Followed posts (visible if I follow author)
+    // 3. Followed posts (visible if I follow author)
     if (followingIds && followingIds.length > 0) {
       where.push({
         ...baseCondition,
@@ -62,7 +68,7 @@ export class PostServiceService {
     const [data, total] = await this.postRepository.findAndCount({
       where,
       order: { createdAt: 'DESC' },
-      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'court'],
+      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'venue'],
       take: limit,
       skip: skippedItems,
     });
@@ -101,7 +107,7 @@ export class PostServiceService {
           bio: userProfile.bio,
           level: userProfile.level,
           position: userProfile.position,
-          avatarUrl: userProfile.avatarUrl, // Including avatarUrl as it is critical for UI
+          avatarUrl: userProfile.avatarUrl,
         } : null,
         originalPost: mappedOriginalPost
       };
@@ -118,7 +124,7 @@ export class PostServiceService {
   async findOne(id: string) {
     return this.postRepository.findOne({
       where: { id },
-      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile', 'court'],
+      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile', 'venue'],
     });
   }
 
@@ -257,6 +263,7 @@ export class PostServiceService {
       contents: dto.description ? { text: dto.description } : null,
       visibility: 'public', // Default to public for shares for now
       tags: [], // Could copy tags if needed, but leaving empty for now
+      sector: originalPost.sector, // Inherit sector from original post
     });
     await this.postRepository.save(newPost);
 
@@ -264,7 +271,6 @@ export class PostServiceService {
     await this.postRepository.increment({ id: dto.postId }, 'sharesCount', 1);
 
     // 5. Notify Post Owner
-    // const post = await this.postRepository.findOne({ where: { id: dto.postId } }); // Already have originalPost
     if (originalPost && originalPost.userId !== dto.userId) {
       const actor = await this.userRepository.findOne({ where: { id: dto.userId }, relations: ['profile'] });
       const nickname = actor?.profile?.nickname || 'Someone';

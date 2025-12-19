@@ -1,5 +1,6 @@
 import { Entity, Column, OneToOne, JoinColumn, PrimaryColumn, UpdateDateColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { User } from './user.entity';
+import { Sector } from '../enums/sector.enum';
 
 @Entity('user_profiles')
 export class UserProfile {
@@ -65,6 +66,15 @@ export class UserProfile {
 
     @Column({ type: 'text', array: true, nullable: true })
     position: string[];
+
+    @Column({
+        type: 'enum',
+        enum: Sector,
+        array: true,
+        name: 'interested_sectors',
+        nullable: true,
+    })
+    interestedSectors: Sector[];
 
     @Column({ nullable: true, length: 50 })
     level: string;

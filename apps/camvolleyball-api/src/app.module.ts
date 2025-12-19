@@ -15,7 +15,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NewsModule } from './news/news.module';
-import { CourtModule } from './court/court.module';
+import { VenueModule } from './venue/venue.module';
 
 @Module({
   imports: [
@@ -42,7 +42,7 @@ import { CourtModule } from './court/court.module';
     SocialModule,
     NotificationsModule,
     NewsModule,
-    CourtModule
+    VenueModule
   ],
   controllers: [AppController],
   providers: [AppService],

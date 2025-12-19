@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsUUID, ValidateNested, IsArray, IsUrl, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { Sector } from '../database/enums/sector.enum';
 
 export class MediaItemDto {
     @ApiProperty({ example: 'https://example.com/image.jpg' })
@@ -70,10 +71,15 @@ export class CreatePostDto {
     @IsUUID()
     userId: string; // Passed from Gateway
 
-    @ApiProperty({ required: false, description: 'Optional ID of the court this post refers to' })
+    @ApiProperty({ required: false, description: 'Optional ID of the venue this post refers to' })
     @IsOptional()
     @IsUUID()
-    courtId?: string;
+    venueId?: string;
+
+    @ApiProperty({ enum: Sector, required: false })
+    @IsEnum(Sector)
+    @IsOptional()
+    sector?: Sector;
 }
 
 export class UpdatePostDto {

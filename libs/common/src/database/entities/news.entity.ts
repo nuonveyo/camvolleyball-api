@@ -1,10 +1,19 @@
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { SportType } from '../enums/sport-type.enum';
 
 @Entity('news')
 export class News extends BaseEntity {
     @Column()
     title: string;
+
+    @Column({
+        type: 'enum',
+        enum: SportType,
+        name: 'sport_type',
+        nullable: true,
+    })
+    sportType: SportType;
 
     @Column({ name: 'thumbnail_url', nullable: true })
     thumbnailUrl: string;

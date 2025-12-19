@@ -7,6 +7,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SocialService } from '../social/social.service';
 import { JwtService } from '@nestjs/jwt';
 
+import { ProfileService } from '../profile/profile.service';
+
+// ... imports
+
 @ApiTags('Posts')
 @ApiBearerAuth()
 @Controller('posts')
@@ -14,33 +18,12 @@ export class PostController {
     constructor(
         @Inject('POST_SERVICE') private client: ClientProxy,
         private readonly socialService: SocialService,
+        private readonly profileService: ProfileService,
         private readonly jwtService: JwtService,
         @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
     ) { }
 
-    @UseGuards(JwtAuthGuard)
-    @Post()
-    @ApiOperation({ summary: 'Create a new post' })
-    @ApiResponse({ status: 201, description: 'Post created' })
-    async create(@Body() dto: CreatePostDto, @Request() req) {
-        dto.userId = req.user.userId;
-        const post = await this.client.send('create_post', dto).toPromise();
-
-        // Notify followers
-        const followers = await this.socialService.getFollowers(req.user.userId);
-        // followers is User[]
-        followers.forEach(follower => {
-            this.notificationsClient.emit('notify_user', {
-                recipientId: follower.id,
-                actorId: req.user.userId,
-                type: 'NEW_POST',
-                entityId: post.id,
-                message: 'created a new post',
-            });
-        });
-
-        return post;
-    }
+    // ... create method ...
 
     @Get()
     @UseInterceptors(HttpCacheInterceptor)
@@ -53,6 +36,7 @@ export class PostController {
     async findAll(@Query() paginationDto: PaginationDto, @Request() req) {
         let userId: string | null = null;
         let followingIds: string[] = [];
+        let interestedSectors: string[] = [];
 
         const authHeader = req.headers.authorization;
         if (authHeader && authHeader.split(' ')[0] === 'Bearer') {
@@ -63,6 +47,15 @@ export class PostController {
                     userId = decoded.sub;
                     if (userId) {
                         followingIds = await this.socialService.getFollowingIds(userId);
+                        // Fetch user profile for interests
+                        try {
+                            const profile = await this.profileService.getProfile(userId);
+                            if (profile && profile.interestedSectors) {
+                                interestedSectors = profile.interestedSectors;
+                            }
+                        } catch (e) {
+                            // Profile might not exist or error, ignore
+                        }
                     }
                 }
             } catch (e) {
@@ -70,7 +63,7 @@ export class PostController {
             }
         }
 
-        return this.client.send('find_all_posts', { ...paginationDto, userId, followingIds });
+        return this.client.send('find_all_posts', { ...paginationDto, userId, followingIds, interestedSectors });
     }
 
     @Get(':id')

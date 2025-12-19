@@ -13,7 +13,7 @@ export class PostServiceController {
   }
 
   @MessagePattern('find_all_posts')
-  findAll(@Payload() paginationDto: PaginationDto) {
+  findAll(@Payload() paginationDto: PaginationDto & { userId?: string, followingIds?: string[], interestedSectors?: string[] }) {
     return this.postService.findAll(paginationDto);
   }
 

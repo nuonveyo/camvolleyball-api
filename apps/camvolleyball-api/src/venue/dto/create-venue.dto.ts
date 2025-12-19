@@ -1,11 +1,16 @@
-import { IsString, IsOptional, IsArray, IsNumber, IsBoolean, ValidateNested, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsNumber, IsArray, IsDecimal, IsEmail, IsUrl, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { SportType } from '@app/common/database/enums/sport-type.enum';
 
-export class CreateCourtDto {
-    @ApiProperty()
+export class CreateVenueDto {
+    @ApiProperty({ example: 'Riverside Volleyball Court' })
     @IsString()
     name: string;
+
+    @ApiProperty({ enum: SportType, required: false, default: SportType.VOLLEYBALL })
+    @IsEnum(SportType)
+    @IsOptional()
+    sportType?: SportType;
 
     @ApiProperty({ required: false })
     @IsString()
@@ -72,4 +77,4 @@ export class CreateCourtDto {
     pricingPolicy?: any;
 }
 
-export class UpdateCourtDto extends CreateCourtDto { }
+export class UpdateVenueDto extends CreateVenueDto { }
