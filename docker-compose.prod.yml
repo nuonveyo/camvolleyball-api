@@ -55,10 +55,14 @@ services:
       NOTIFICATIONS_SERVICE_PORT: 3002
       FILE_SERVICE_HOST: file-service
       FILE_SERVICE_PORT: 3003
+      # Redis
+      REDIS_HOST: redis_prod
+      REDIS_PORT: 6379
       # Others
       NODE_ENV: production
     depends_on:
       - postgres_prod
+      - redis_prod
       - post-service
       - notifications-service
       - file-service
@@ -159,8 +163,16 @@ services:
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
       - backend-network
-    # In production with Oracle Managed DB, you might remove this service
-    # and point DATABASE_HOST to the Oracle ATP Endpoint.
+
+  redis_prod:
+    image: redis:alpine
+    container_name: personalize_redis_prod
+    restart: always
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - backend-network
 
   minio_prod:
     image: minio/minio
@@ -186,6 +198,7 @@ networks:
 
 volumes:
   postgres_data_prod:
+  redis_data_prod:
   minio_data_prod:
   caddy_data:
   caddy_config:
