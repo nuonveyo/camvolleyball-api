@@ -43,9 +43,24 @@ async function bootstrap() {
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
 
+  // Secure Swagger UI
+  if (process.env.NODE_ENV === 'production') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const basicAuth = require('express-basic-auth');
+    app.use(
+      ['/docs', '/docs-json'],
+      basicAuth({
+        challenge: true,
+        users: {
+          [process.env.SWAGGER_USER || 'admin']: process.env.SWAGGER_PASSWORD || 'admin',
+        },
+      }),
+    );
+  }
+
   const config = new DocumentBuilder()
-    .setTitle('CamVolleyball API')
-    .setDescription('The CamVolleyball API description')
+    .setTitle('Personalize API')
+    .setDescription(' The Personalize API description')
     .setVersion('1.0')
     .addTag('Auth')
     .addTag('Users')
