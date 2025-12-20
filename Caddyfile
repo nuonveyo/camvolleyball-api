@@ -1,0 +1,18 @@
+{
+    email {$LETSENCRYPT_EMAIL}
+}
+
+{$SITE_ADDRESS} {
+    reverse_proxy gateway:3000
+    
+    # Optional: basic security headers
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-XSS-Protection "1; mode=block"
+        X-Frame-Options "DENY"
+    }
+
+    log {
+        output stdout
+    }
+}

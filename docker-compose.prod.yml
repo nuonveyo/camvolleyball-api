@@ -4,13 +4,41 @@ services:
   # -------------------------------------------------------------------------
   # API Gateway (Public-facing)
   # -------------------------------------------------------------------------
+  # -------------------------------------------------------------------------
+  # Reverse Proxy (HTTPS Termination)
+  # -------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: personalize_caddy
+    restart: always
+    env_file:
+      - .env.prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - backend-network
+    depends_on:
+      - gateway
+
+  # -------------------------------------------------------------------------
+  # API Gateway (Internal)
+  # -------------------------------------------------------------------------
   gateway:
     build:
       context: .
       dockerfile: apps/personalize-api/Dockerfile
     container_name: personalize_gateway
-    ports:
-      - "3000:3000"
+    restart: always
+    env_file:
+      - .env.prod
+    # Ports removed: Caddy handles ingress
+    expose:
+      - "3000"
     environment:
       # Database
       DATABASE_HOST: postgres_prod # or the Oracle DB IP
@@ -45,6 +73,9 @@ services:
       context: .
       dockerfile: apps/post-service/Dockerfile
     container_name: personalize_post_service
+    restart: always
+    env_file:
+      - .env.prod
     environment:
       DATABASE_HOST: postgres_prod
       DATABASE_PORT: 5432
@@ -62,6 +93,9 @@ services:
       context: .
       dockerfile: apps/notifications-service/Dockerfile
     container_name: personalize_notifications_service
+    restart: always
+    env_file:
+      - .env.prod
     environment:
       DATABASE_HOST: postgres_prod
       DATABASE_PORT: 5432
@@ -72,8 +106,15 @@ services:
       NODE_ENV: production
       # Google / Firebase
       GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-service-account.json
+      # OTP Fallbacks
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      WHATSAPP_API_URL: ${WHATSAPP_API_URL}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN}
+      WHATSAPP_TEMPLATE_NAME: ${WHATSAPP_TEMPLATE_NAME}
     volumes:
-      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+      - ./prod-personalize-firebase-adminsdk.json:/app/firebase-service-account.json:ro
     networks:
       - backend-network
 
@@ -82,6 +123,9 @@ services:
       context: .
       dockerfile: apps/file-service/Dockerfile
     container_name: personalize_file_service
+    restart: always
+    env_file:
+      - .env.prod
     environment:
       PORT: 3003
       NODE_ENV: production
@@ -92,7 +136,7 @@ services:
       AWS_S3_BUCKET_NAME: camvolleyball-uploads
       # If using MinIO container below
       AWS_S3_ENDPOINT: http://minio_prod:9000
-      AWS_S3_PUBLIC_ENDPOINT: https://files.camvolleyball.com # Example domain
+      AWS_S3_PUBLIC_ENDPOINT: https://files.personalize.com # Updated domain
     depends_on:
       - minio_prod
     networks:
@@ -104,6 +148,9 @@ services:
   postgres_prod:
     image: postgres:15
     container_name: personalize_postgres_prod
+    restart: always
+    env_file:
+      - .env.prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -118,6 +165,9 @@ services:
   minio_prod:
     image: minio/minio
     container_name: personalize_minio_prod
+    restart: always
+    env_file:
+      - .env.prod
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000" # API
@@ -137,3 +187,5 @@ networks:
 volumes:
   postgres_data_prod:
   minio_data_prod:
+  caddy_data:
+  caddy_config:

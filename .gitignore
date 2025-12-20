@@ -58,3 +58,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 cert.pem
 key.pem
 uat-firebase-adminsdk.json
+prod-personalize-firebase-adminsdk.json
+.env.prod
