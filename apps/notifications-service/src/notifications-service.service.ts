@@ -171,26 +171,70 @@ export class NotificationsServiceService implements OnModuleInit {
     console.log(`[NotificationsService] Checking Creds: SID=${!!accountSid}, AuthToken=${!!authToken}, From=${!!fromNumber}, TokenLength=${authToken?.length}`);
 
     if (!authToken || authToken.trim() === '' || authToken === 'null' || authToken === 'undefined') {
-      // Fallback to Telegram
-      console.log('Twilio Token missing. Sending to Telegram Group...');
-      const botToken = '6593874636:AAHTx-aWgFlwN9nSZYS9ymOMMUcZN3PIb5I';
-      const chatId = '-4000064873';
+      // Fallback 1: WhatsApp
+      const waPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+      const waAccessToken = process.env.WHATSAPP_ACCESS_TOKEN;
 
-      try {
-        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        const response = await axios.post(url, {
-          chat_id: chatId,
-          text: `[OTP for ${phoneNumber}]\n${message}`,
-        });
-        console.log('Telegram API Response:', response.data);
-        console.log('Sent to Telegram successfully.');
-        return { success: true, provider: 'telegram' };
-      } catch (e) {
-        console.error('Telegram Error:', e.message);
-        console.warn('Fallback to Mock Log');
-        console.log(`[MOCK SMS] To: ${phoneNumber}, Body: ${message}`);
-        return { success: false, error: 'Telegram failed', provider: 'mock' };
+      if (waPhoneNumberId && waAccessToken) {
+        console.log('Twilio Token missing. Sending to WhatsApp...');
+        const waTemplateName = process.env.WHATSAPP_TEMPLATE_NAME || 'hello_world';
+        const waApiUrl = process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0';
+
+        try {
+          const url = `${waApiUrl}/${waPhoneNumberId}/messages`;
+          const otpMatch = message.match(/\b\d{6}\b/);
+          const otpCode = otpMatch ? otpMatch[0] : message;
+
+          const payload = {
+            messaging_product: 'whatsapp',
+            to: phoneNumber,
+            type: 'template',
+            template: {
+              name: waTemplateName,
+              language: { code: 'en_US' },
+              components: waTemplateName !== 'hello_world' ? [
+                { type: 'body', parameters: [{ type: 'text', text: otpCode }] },
+                { type: 'button', sub_type: 'url', index: 0, parameters: [{ type: 'text', text: otpCode }] }
+              ] : undefined
+            }
+          };
+
+          const response = await axios.post(url, payload, {
+            headers: { 'Authorization': `Bearer ${waAccessToken}`, 'Content-Type': 'application/json' }
+          });
+          console.log('WhatsApp API Response:', response.data);
+          return { success: true, provider: 'whatsapp', data: response.data };
+        } catch (e) {
+          console.error('WhatsApp Error:', e.response?.data || e.message);
+          // Continue to next fallback
+        }
       }
+
+      // Fallback 2: Telegram
+      const tgBotToken = process.env.TELEGRAM_BOT_TOKEN;
+      const tgChatId = process.env.TELEGRAM_CHAT_ID;
+
+      if (tgChatId && tgChatId.trim() !== '') {
+        console.log('Twilio/WhatsApp missing or failed. Sending to Telegram...');
+        const botToken = tgBotToken || '6593874636:AAHTx-aWgFlwN9nSZYS9ymOMMUcZN3PIb5I';
+
+        try {
+          const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+          const response = await axios.post(url, {
+            chat_id: tgChatId,
+            text: `[OTP for ${phoneNumber}]\n${message}`,
+          });
+          console.log('Telegram API Response:', response.data);
+          return { success: true, provider: 'telegram' };
+        } catch (e) {
+          console.error('Telegram Error:', e.message);
+        }
+      }
+
+      // Final Fallback: Mock Log
+      console.warn('No valid SMS/Messaging provider configured (Twilio, WhatsApp, or Telegram).');
+      console.log(`[MOCK SMS] To: ${phoneNumber}, Body: ${message}`);
+      return { success: false, error: 'No provider configured', provider: 'mock' };
     }
 
     if (!accountSid || !fromNumber) {
