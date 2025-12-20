@@ -10,15 +10,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 async function bootstrap() {
-  // HTTPS Options (Self-Signed for Mobile Dev)
-  const httpsOptions = {
-    key: fs.readFileSync(path.join(process.cwd(), 'key.pem')),
-    cert: fs.readFileSync(path.join(process.cwd(), 'cert.pem')),
-  };
+  let appOptions = {};
 
-  const app = await NestFactory.create(AppModule, {
-    httpsOptions,
-  });
+  // Only try to use HTTPS if NOT in production AND keys exist
+  if (process.env.NODE_ENV !== 'production') {
+    const keyPath = path.join(process.cwd(), 'key.pem');
+    const certPath = path.join(process.cwd(), 'cert.pem');
+
+    if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+      appOptions = {
+        httpsOptions: {
+          key: fs.readFileSync(keyPath),
+          cert: fs.readFileSync(certPath),
+        },
+      };
+    }
+  }
+
+  const app = await NestFactory.create(AppModule, appOptions);
   app.enableCors();
 
   app.useGlobalPipes(new ValidationPipe({
