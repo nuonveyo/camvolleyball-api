@@ -14,7 +14,7 @@ export class HttpCacheInterceptor extends CacheInterceptor {
             return undefined;
         }
 
-        // Key: /camvolleyball/v1/posts?page=1-user:123
+        // Key: /personalize/v1/posts?page=1-user:123
         return `${requestUrl}-${userId}`;
     }
 }

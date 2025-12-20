@@ -8,14 +8,14 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build camvolleyball-api
+RUN npm run build personalize-api
 
 FROM node:18-alpine
 
 WORKDIR /app
 
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist/apps/camvolleyball-api ./dist
+COPY --from=builder /app/dist/apps/personalize-api ./dist
 COPY --from=builder /app/package*.json ./
 
 EXPOSE 3000

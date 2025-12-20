@@ -1,22 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/camvolleyball-api/src",
+  "sourceRoot": "apps/personalize-api/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/camvolleyball-api/tsconfig.app.json"
+    "tsConfigPath": "apps/personalize-api/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/camvolleyball-api",
+  "root": "apps/personalize-api",
   "projects": {
-    "camvolleyball-api": {
+    "personalize-api": {
       "type": "application",
-      "root": "apps/camvolleyball-api",
+      "root": "apps/personalize-api",
       "entryFile": "main",
-      "sourceRoot": "apps/camvolleyball-api/src",
+      "sourceRoot": "apps/personalize-api/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/camvolleyball-api/tsconfig.app.json"
+        "tsConfigPath": "apps/personalize-api/tsconfig.app.json"
       }
     },
     "common": {

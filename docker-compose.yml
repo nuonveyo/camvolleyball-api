@@ -3,26 +3,26 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: camvolleyball_postgres
+    container_name: personalize_postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
-      POSTGRES_DB: camvolleyball_db
+      POSTGRES_DB: personalize_db
     ports:
       - "5433:5432"
     volumes:
-      - camvolleyball_pg_data:/var/lib/postgresql/data
+      - personalize_pg_data:/var/lib/postgresql/data
 
   redis:
     image: redis:alpine
-    container_name: camvolleyball_redis
+    container_name: personalize_redis
     ports:
       - "6379:6379"
 
   # Optional: pgAdmin for GUI
   pgadmin:
     image: dpage/pgadmin4
-    container_name: camvolleyball_pgadmin
+    container_name: personalize_pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: password123
@@ -33,7 +33,7 @@ services:
 
   minio:
     image: minio/minio
-    container_name: camvolleyball_minio
+    container_name: personalize_minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -41,9 +41,9 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password123
     volumes:
-      - camvolleyball_minio_data:/data
+      - personalize_minio_data:/data
     command: server /data --console-address ":9001"
 
 volumes:
-  camvolleyball_pg_data:
-  camvolleyball_minio_data:
+  personalize_pg_data:
+  personalize_minio_data:

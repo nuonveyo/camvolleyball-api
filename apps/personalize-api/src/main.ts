@@ -26,7 +26,7 @@ async function bootstrap() {
     transformOptions: { enableImplicitConversion: true },
   }));
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.setGlobalPrefix('camvolleyball/v1');
+  app.setGlobalPrefix('personalize/v1');
   app.useGlobalInterceptors(new TransformInterceptor());
 
   // Increase body limit for larger payloads (though files should go to S3)

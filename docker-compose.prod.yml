@@ -7,8 +7,8 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: apps/camvolleyball-api/Dockerfile
-    container_name: camvolleyball_gateway
+      dockerfile: apps/personalize-api/Dockerfile
+    container_name: personalize_gateway
     ports:
       - "3000:3000"
     environment:
@@ -44,7 +44,7 @@ services:
     build:
       context: .
       dockerfile: apps/post-service/Dockerfile
-    container_name: camvolleyball_post_service
+    container_name: personalize_post_service
     environment:
       DATABASE_HOST: postgres_prod
       DATABASE_PORT: 5432
@@ -61,7 +61,7 @@ services:
     build:
       context: .
       dockerfile: apps/notifications-service/Dockerfile
-    container_name: camvolleyball_notifications_service
+    container_name: personalize_notifications_service
     environment:
       DATABASE_HOST: postgres_prod
       DATABASE_PORT: 5432
@@ -81,7 +81,7 @@ services:
     build:
       context: .
       dockerfile: apps/file-service/Dockerfile
-    container_name: camvolleyball_file_service
+    container_name: personalize_file_service
     environment:
       PORT: 3003
       NODE_ENV: production
@@ -103,7 +103,7 @@ services:
   # -------------------------------------------------------------------------
   postgres_prod:
     image: postgres:15
-    container_name: camvolleyball_postgres_prod
+    container_name: personalize_postgres_prod
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -117,7 +117,7 @@ services:
 
   minio_prod:
     image: minio/minio
-    container_name: camvolleyball_minio_prod
+    container_name: personalize_minio_prod
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000" # API
