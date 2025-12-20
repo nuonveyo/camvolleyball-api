@@ -16,3 +16,7 @@
         output stdout
     }
 }
+
+files.{$SITE_ADDRESS} {
+    reverse_proxy minio_prod:9000
+}

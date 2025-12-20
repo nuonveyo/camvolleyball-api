@@ -7,7 +7,7 @@ async function bootstrap() {
   // Use a temporary app context to get ConfigService for port
   const appContext = await NestFactory.createApplicationContext(FileServiceModule);
   const configService = appContext.get(ConfigService);
-  const TCP_PORT = 3002; // Hardcode or use configService.get('FILE_SERVICE_PORT')
+  const TCP_PORT = 3003; // Hardcode or use configService.get('FILE_SERVICE_PORT')
 
   await appContext.close();
 
