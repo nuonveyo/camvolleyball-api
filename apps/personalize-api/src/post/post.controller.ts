@@ -23,7 +23,14 @@ export class PostController {
         @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
     ) { }
 
-    // ... create method ...
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    @ApiOperation({ summary: 'Create a new post' })
+    @ApiResponse({ status: 201, description: 'Post created' })
+    create(@Body() dto: CreatePostDto, @Request() req) {
+        dto.userId = req.user.userId;
+        return this.client.send('create_post', dto);
+    }
 
     @Get()
     @UseInterceptors(HttpCacheInterceptor)
