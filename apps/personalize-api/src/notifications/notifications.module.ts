@@ -1,17 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NotificationsController } from './notifications.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
     imports: [
-        ClientsModule.register([
+        ClientsModule.registerAsync([
             {
                 name: 'NOTIFICATIONS_SERVICE',
-                transport: Transport.TCP,
-                options: {
-                    host: '127.0.0.1',
-                    port: 3004,
-                },
+                useFactory: (configService: ConfigService) => ({
+                    transport: Transport.TCP,
+                    options: {
+                        host: configService.get('NOTIFICATIONS_SERVICE_HOST') || '127.0.0.1',
+                        port: parseInt(configService.get('NOTIFICATIONS_SERVICE_PORT') || '3004'),
+                    },
+                }),
+                inject: [ConfigService],
             },
         ]),
     ],
