@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsUrl, IsBoolean, IsDateString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { SportType } from '@app/common/database/enums/sport-type.enum';
+import { Sector } from '@app/common/database/enums/sector.enum';
 
 export class CreateNewsDto {
     @ApiProperty()
@@ -11,6 +12,11 @@ export class CreateNewsDto {
     @IsEnum(SportType)
     @IsOptional()
     sportType?: SportType;
+
+    @ApiProperty({ enum: Sector, required: false })
+    @IsEnum(Sector)
+    @IsOptional()
+    sector?: Sector;
 
     @ApiProperty({ required: false })
     @IsUrl()
