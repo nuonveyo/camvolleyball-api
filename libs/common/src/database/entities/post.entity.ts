@@ -6,6 +6,8 @@ import { Like } from './like.entity';
 import { Share } from './share.entity';
 import { Venue } from './venue.entity';
 import { Sector } from '../enums/sector.enum';
+import { Event } from './event.entity';
+import { OneToOne } from 'typeorm';
 
 @Entity('posts')
 export class Post extends BaseEntity {
@@ -63,4 +65,11 @@ export class Post extends BaseEntity {
 
     @OneToMany(() => Share, (share) => share.post)
     shares: Share[];
+
+    @Column({ name: 'event_id', nullable: true })
+    eventId: string;
+
+    @OneToOne(() => Event, (event) => event.post)
+    @JoinColumn({ name: 'event_id' })
+    event: Event;
 }

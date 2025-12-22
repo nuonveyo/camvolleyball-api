@@ -16,6 +16,8 @@ import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NewsModule } from './news/news.module';
 import { VenueModule } from './venue/venue.module';
+import { TeamModule } from './team/team.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -42,7 +44,9 @@ import { VenueModule } from './venue/venue.module';
     SocialModule,
     NotificationsModule,
     NewsModule,
-    VenueModule
+    VenueModule,
+    TeamModule,
+    EventModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,3 +16,6 @@ export * from './user-device.entity';
 export * from './news.entity';
 export * from './venue.entity';
 export * from './venue-availability.entity';
+export * from './team.entity';
+export * from './team-member.entity';
+export * from './event.entity';
