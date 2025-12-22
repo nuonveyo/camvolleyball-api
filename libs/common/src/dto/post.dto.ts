@@ -2,6 +2,7 @@ import { IsString, IsOptional, IsUUID, ValidateNested, IsArray, IsUrl, IsEnum } 
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Sector } from '../database/enums/sector.enum';
+import { CreateEventDetailsDto } from './create-event-details.dto';
 
 export class MediaItemDto {
     @ApiProperty({ example: 'https://example.com/image.jpg' })
@@ -80,6 +81,17 @@ export class CreatePostDto {
     @IsEnum(Sector)
     @IsOptional()
     sector?: Sector;
+
+    @ApiProperty({ required: false, description: 'Optional Event Details to create an event with this post' })
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => CreateEventDetailsDto)
+    event?: CreateEventDetailsDto;
+
+    @ApiProperty({ required: false, description: 'Internal use: attached when event is created' })
+    @IsOptional()
+    @IsUUID()
+    eventId?: string;
 }
 
 export class UpdatePostDto {

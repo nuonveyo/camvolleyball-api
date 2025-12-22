@@ -42,4 +42,20 @@ export class EventService {
 
         return savedEvent;
     }
+
+    async createEventOnly(dto: any, userId: string) {
+        const event = this.eventRepository.create({
+            title: dto.title,
+            matchDate: dto.matchDate,
+            matchType: dto.matchType,
+            venueId: dto.venueId,
+            homeTeamId: dto.homeTeamId,
+            awayTeamId: dto.awayTeamId,
+        });
+        return this.eventRepository.save(event);
+    }
+
+    async updateEventPostId(eventId: string, postId: string) {
+        await this.eventRepository.update(eventId, { postId });
+    }
 }

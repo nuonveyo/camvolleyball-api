@@ -48,6 +48,5 @@ export class Event extends BaseEntity {
     postId: string;
 
     @OneToOne(() => Post, (post) => post.event)
-    @JoinColumn({ name: 'post_id' })
     post: Post;
 }

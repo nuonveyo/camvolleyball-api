@@ -6,10 +6,8 @@ import { CreatePostDto, UpdatePostDto, PaginationDto, CreateCommentDto, CreateSh
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SocialService } from '../social/social.service';
 import { JwtService } from '@nestjs/jwt';
-
 import { ProfileService } from '../profile/profile.service';
-
-// ... imports
+import { EventService } from '../event/event.service';
 
 @ApiTags('Posts')
 @ApiBearerAuth()
@@ -21,15 +19,31 @@ export class PostController {
         private readonly profileService: ProfileService,
         private readonly jwtService: JwtService,
         @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsClient: ClientProxy,
+        private readonly eventService: EventService,
     ) { }
 
     @UseGuards(JwtAuthGuard)
     @Post()
     @ApiOperation({ summary: 'Create a new post' })
     @ApiResponse({ status: 201, description: 'Post created' })
-    create(@Body() dto: CreatePostDto, @Request() req) {
+    async create(@Body() dto: CreatePostDto, @Request() req) {
         dto.userId = req.user.userId;
-        return this.client.send('create_post', dto);
+
+        // 1. Check if Event creation is requested
+        if (dto.event) {
+            const event = await this.eventService.createEventOnly(dto.event, req.user.userId);
+            dto.eventId = event.id; // Attach Event ID for the Post Service
+        }
+
+        // 2. Create Post via Microservice
+        const post = await this.client.send('create_post', dto).toPromise();
+
+        // 3. Link Event back to Post (if applicable)
+        if (dto.event && dto.eventId && post && post.id) {
+            await this.eventService.updateEventPostId(dto.eventId, post.id);
+        }
+
+        return post;
     }
 
     @Get()

@@ -28,6 +28,7 @@ export class PostServiceService {
       visibility: dto.visibility,
       venueId: dto.venueId,
       sector: dto.sector,
+      eventId: dto.eventId,
     });
     return this.postRepository.save(post);
   }
@@ -68,13 +69,13 @@ export class PostServiceService {
     const [data, total] = await this.postRepository.findAndCount({
       where,
       order: { createdAt: 'DESC' },
-      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'venue'],
+      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'venue', 'event', 'event.homeTeam', 'event.awayTeam', 'event.venue'],
       take: limit,
       skip: skippedItems,
     });
 
     const mappedData = data.map(post => {
-      const { user, originalPost, deletedAt, userId, ...rest } = post; // Exclude deletedAt, userId
+      const { user, originalPost, deletedAt, userId, event, ...rest } = post; // Exclude deletedAt, userId
 
       let mappedOriginalPost: any = null;
       if (originalPost) {
@@ -97,6 +98,32 @@ export class PostServiceService {
 
       const userProfile = user?.profile;
 
+      // Map Event Data (Only necessary fields)
+      let mappedEvent: any = null;
+      if (event) {
+        mappedEvent = {
+          id: event.id,
+          title: event.title,
+          matchDate: event.matchDate,
+          matchType: event.matchType,
+          venue: event.venue ? {
+            id: event.venue.id,
+            name: event.venue.name,
+            city: event.venue.city
+          } : null,
+          homeTeam: event.homeTeam ? {
+            id: event.homeTeam.id,
+            name: event.homeTeam.name,
+            logoUrl: event.homeTeam.logoUrl
+          } : null,
+          awayTeam: event.awayTeam ? {
+            id: event.awayTeam.id,
+            name: event.awayTeam.name,
+            logoUrl: event.awayTeam.logoUrl
+          } : null
+        };
+      }
+
       return {
         ...rest,
         profile: userProfile ? {
@@ -109,7 +136,8 @@ export class PostServiceService {
           position: userProfile.position,
           avatarUrl: userProfile.avatarUrl,
         } : null,
-        originalPost: mappedOriginalPost
+        originalPost: mappedOriginalPost,
+        event: mappedEvent
       };
     });
 

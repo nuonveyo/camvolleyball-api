@@ -6,13 +6,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SocialModule } from '../social/social.module';
 import { ProfileModule } from '../profile/profile.module';
 import { AuthModule } from '../auth/auth.module';
+import { EventModule } from '../event/event.module';
 
 @Module({
     imports: [
         ConfigModule,
         SocialModule,
+        SocialModule,
         ProfileModule,
         AuthModule,
+        EventModule,
         ClientsModule.registerAsync([
             {
                 name: 'POST_SERVICE',
