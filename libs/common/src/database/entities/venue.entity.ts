@@ -32,10 +32,28 @@ export class Venue extends BaseEntity {
     rating: number;
 
     // Location Data
-    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    @Column({
+        type: 'decimal',
+        precision: 10,
+        scale: 7,
+        nullable: true,
+        transformer: {
+            to: (value) => value,
+            from: (value) => parseFloat(value),
+        }
+    })
     latitude: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    @Column({
+        type: 'decimal',
+        precision: 10,
+        scale: 7,
+        nullable: true,
+        transformer: {
+            to: (value) => value,
+            from: (value) => parseFloat(value),
+        }
+    })
     longitude: number;
 
     @Column({ name: 'address_detail', type: 'text', nullable: true })
