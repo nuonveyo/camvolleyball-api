@@ -69,4 +69,19 @@ export class TeamService {
 
         return results;
     }
+
+    async findAll(paginationDto: any, name?: string): Promise<[Team[], number]> {
+        const { limit = 10, offset = 0 } = paginationDto;
+        const query = this.teamRepository.createQueryBuilder('team')
+            .leftJoinAndSelect('team.members', 'members')
+            .leftJoinAndSelect('members.user', 'user')
+            .take(limit)
+            .skip(offset);
+
+        if (name) {
+            query.where('team.name ILIKE :name', { name: `%${name}%` });
+        }
+
+        return query.getManyAndCount();
+    }
 }

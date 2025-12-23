@@ -1,9 +1,10 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param, Patch, ParseArrayPipe } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param, Patch, ParseArrayPipe, Query } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { PaginationDto } from '@app/common';
 
 @ApiTags('Teams')
 @ApiBearerAuth()
@@ -24,5 +25,12 @@ export class TeamController {
     @ApiBody({ type: [AddMemberDto] })
     addMembers(@Param('id') id: string, @Body(new ParseArrayPipe({ items: AddMemberDto })) dtos: AddMemberDto[], @Request() req) {
         return this.teamService.addMembers(id, dtos, req.user.userId);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'List all teams' })
+    @ApiResponse({ status: 200, description: 'Return all teams.' })
+    findAll(@Query() paginationDto: PaginationDto, @Query('name') name?: string) {
+        return this.teamService.findAll(paginationDto, name);
     }
 }
