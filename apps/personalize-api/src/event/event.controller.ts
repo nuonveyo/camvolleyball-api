@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
 import { EventService } from './event.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -15,5 +15,11 @@ export class EventController {
     @ApiOperation({ summary: 'Create a new event' })
     async create(@Body() dto: CreateEventDto, @Request() req) {
         return this.eventService.createEvent(dto, req.user.userId);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'List upcoming popular events (future)' })
+    findAll() {
+        return this.eventService.findAll();
     }
 }

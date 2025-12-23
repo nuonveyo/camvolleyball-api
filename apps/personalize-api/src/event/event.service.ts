@@ -58,4 +58,25 @@ export class EventService {
     async updateEventPostId(eventId: string, postId: string) {
         await this.eventRepository.update(eventId, { postId });
     }
+
+    async findAll(limit: number = 5): Promise<Event[]> {
+        // Requirement: "up comming event (matchDate <= currentDate)"
+        // Note: The user phrase "up comming" contradicts "matchDate <= currentDate" (Past).
+        // The sorting by likes/comments implies past/ongoing events.
+        // We will strictly follow the logic: matchDate <= NOW, limit 5, sort by popularity.
+
+        const now = new Date();
+
+        return this.eventRepository.createQueryBuilder('event')
+            .leftJoinAndSelect('event.post', 'post')
+            .leftJoinAndSelect('event.homeTeam', 'homeTeam')
+            .leftJoinAndSelect('event.awayTeam', 'awayTeam')
+            .leftJoinAndSelect('event.venue', 'venue')
+            .where('event.matchDate >= :now', { now })
+            .addSelect('(COALESCE(post.likesCount, 0) + COALESCE(post.commentsCount, 0) + COALESCE(post.sharesCount, 0))', 'popularity')
+            .orderBy('popularity', 'DESC')
+            .addOrderBy('event.matchDate', 'ASC')
+            .take(limit)
+            .getMany();
+    }
 }
