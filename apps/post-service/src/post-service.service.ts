@@ -114,12 +114,14 @@ export class PostServiceService {
           homeTeam: event.homeTeam ? {
             id: event.homeTeam.id,
             name: event.homeTeam.name,
-            logoUrl: event.homeTeam.logoUrl
+            logoUrl: event.homeTeam.logoUrl,
+            rating: event.homeTeam.rating
           } : null,
           awayTeam: event.awayTeam ? {
             id: event.awayTeam.id,
             name: event.awayTeam.name,
-            logoUrl: event.awayTeam.logoUrl
+            logoUrl: event.awayTeam.logoUrl,
+            rating: event.awayTeam.rating
           } : null
         };
       }

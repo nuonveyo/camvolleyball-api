@@ -15,7 +15,16 @@ export class Team extends BaseEntity {
     @Column({ default: 6 })
     size: number; // Max size, e.g. 10
 
-    @Column({ type: 'decimal', precision: 2, scale: 1, default: 0 })
+    @Column({
+        type: 'decimal',
+        precision: 2,
+        scale: 1,
+        default: 0,
+        transformer: {
+            to: (value) => value,
+            from: (value) => parseFloat(value),
+        }
+    })
     rating: number;
 
     @Column({ name: 'captain_id' })
