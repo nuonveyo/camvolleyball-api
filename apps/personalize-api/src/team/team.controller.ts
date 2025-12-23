@@ -1,8 +1,9 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param, Patch, ParseArrayPipe } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { AddMemberDto } from './dto/add-member.dto';
 
 @ApiTags('Teams')
 @ApiBearerAuth()
@@ -15,5 +16,13 @@ export class TeamController {
     @ApiOperation({ summary: 'Create a new team' })
     create(@Body() createTeamDto: CreateTeamDto, @Request() req) {
         return this.teamService.create(createTeamDto, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/members')
+    @ApiOperation({ summary: 'Add members to the team' })
+    @ApiBody({ type: [AddMemberDto] })
+    addMembers(@Param('id') id: string, @Body(new ParseArrayPipe({ items: AddMemberDto })) dtos: AddMemberDto[], @Request() req) {
+        return this.teamService.addMembers(id, dtos, req.user.userId);
     }
 }

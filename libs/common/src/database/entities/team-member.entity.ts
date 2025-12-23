@@ -33,5 +33,9 @@ export class TeamMember extends BaseEntity {
         enum: TeamMemberStatus,
         default: TeamMemberStatus.PENDING,
     })
-    status: TeamMemberStatus;
+    @Column({ nullable: true })
+    position: string;
+
+    @Column({ name: 'jersey_number', nullable: true })
+    jerseyNumber: number;
 }
