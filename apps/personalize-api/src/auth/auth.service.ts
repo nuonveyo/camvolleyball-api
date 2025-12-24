@@ -80,7 +80,7 @@ export class AuthService {
         const { phoneNumber, password, deviceId, fcmToken } = loginDto;
         const user = await this.userRepository.findOne({
             where: { phoneNumber },
-            relations: ['roles'],
+            relations: ['roles', 'profile'],
         });
 
         if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
@@ -116,6 +116,7 @@ export class AuthService {
                 id: user.id,
                 phoneNumber: user.phoneNumber,
                 roles: user.roles,
+                profile: user.profile
             }
         };
     }
