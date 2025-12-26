@@ -2,10 +2,16 @@
     "HELLO": "Hello",
     "auth": {
         "user_not_found": "User not found",
-        "invalid_credentials": "Password is incorrect",
+        "invalid_credentials": "Phone number or Password is incorrect",
         "user_inactive": "User is not active"
     },
     "test": {
         "error": "This is a test error"
+    },
+    "validation": {
+        "phone_length": "Phone number must be between 6 and 16 characters",
+        "password_length": "Password must be between 6 and 12 characters",
+        "password_complexity": "Password must contain at least one letter, one number, and one special character",
+        "invalid_phone": "Invalid phone number format"
     }
 }

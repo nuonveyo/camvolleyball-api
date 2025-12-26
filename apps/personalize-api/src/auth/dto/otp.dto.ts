@@ -1,4 +1,4 @@
-import { IsString, IsPhoneNumber, IsEnum } from 'class-validator';
+import { IsString, IsPhoneNumber, IsEnum, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum OtpType {
@@ -8,7 +8,8 @@ export enum OtpType {
 
 export class SendOtpDto {
     @ApiProperty({ example: '+85512345678', description: 'User phone number' })
-    @IsPhoneNumber()
+    @IsPhoneNumber(undefined, { message: 'validation.invalid_phone' })
+    @Length(6, 16, { message: 'validation.phone_length' })
     phoneNumber: string;
 
     @ApiProperty({ enum: OtpType, example: OtpType.VERIFICATION, description: 'OTP type' })
@@ -18,7 +19,8 @@ export class SendOtpDto {
 
 export class ConfirmOtpDto {
     @ApiProperty({ example: '+85512345678', description: 'User phone number' })
-    @IsPhoneNumber()
+    @IsPhoneNumber(undefined, { message: 'validation.invalid_phone' })
+    @Length(6, 16, { message: 'validation.phone_length' })
     phoneNumber: string;
 
     @ApiProperty({ example: '123456', description: 'OTP code' })
