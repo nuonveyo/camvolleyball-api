@@ -148,7 +148,10 @@ export class AuthService {
         });
 
         // In production, do NOT return the code.
-        return { message: 'auth.otp_sent_success' };
+        return {
+            message: 'auth.otp_sent_success',
+            expiration: expiresAt
+        };
     }
 
     async confirmOtp(dto: ConfirmOtpDto) {
