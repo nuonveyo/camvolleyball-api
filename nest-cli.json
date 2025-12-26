@@ -16,7 +16,13 @@
       "entryFile": "main",
       "sourceRoot": "apps/personalize-api/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/personalize-api/tsconfig.app.json"
+        "tsConfigPath": "apps/personalize-api/tsconfig.app.json",
+        "assets": [
+          {
+            "include": "i18n/**/*",
+            "watchAssets": true
+          }
+        ]
       }
     },
     "common": {

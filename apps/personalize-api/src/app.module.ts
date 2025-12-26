@@ -11,7 +11,8 @@ import { HeaderMiddleware } from './common/middleware/header.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
-
+import * as path from 'path';
+import { I18nModule, AcceptLanguageResolver, QueryResolver } from 'nestjs-i18n';
 import { SocialModule } from './social/social.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NewsModule } from './news/news.module';
@@ -35,6 +36,17 @@ import { EventModule } from './event/event.module';
         }),
       }),
       inject: [ConfigService],
+    }),
+    I18nModule.forRoot({
+      fallbackLanguage: 'en',
+      loaderOptions: {
+        path: path.join(__dirname, '/i18n/'),
+        watch: true,
+      },
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        AcceptLanguageResolver,
+      ],
     }),
     DatabaseModule,
     AuthModule,

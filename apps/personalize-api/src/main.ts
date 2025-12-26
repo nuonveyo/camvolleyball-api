@@ -8,6 +8,7 @@ import { HttpExceptionFilter } from '../../../libs/common/src/filters/http-excep
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { I18nService } from 'nestjs-i18n';
 
 async function bootstrap() {
   let appOptions = {};
@@ -34,7 +35,8 @@ async function bootstrap() {
     transform: true,
     transformOptions: { enableImplicitConversion: true },
   }));
-  app.useGlobalFilters(new HttpExceptionFilter());
+  const i18nService = app.get(I18nService);
+  app.useGlobalFilters(new HttpExceptionFilter(i18nService as any));
   app.setGlobalPrefix('personalize/v1');
   app.useGlobalInterceptors(new TransformInterceptor());
 

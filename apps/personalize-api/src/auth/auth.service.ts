@@ -84,11 +84,11 @@ export class AuthService {
         });
 
         if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new BadRequestException('auth.invalid_credentials');
         }
 
         if (!user.isActive) {
-            throw new UnauthorizedException('User is not active');
+            throw new BadRequestException('auth.user_inactive');
         }
 
         // Feature: Track Device
@@ -178,7 +178,7 @@ export class AuthService {
     async requestResetPassword(dto: RequestResetPasswordDto) {
         const user = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
         if (!user) {
-            throw new UnauthorizedException('User not found');
+            throw new BadRequestException('auth.user_not_found');
         }
         // Send OTP
         return this.sendOtp({ phoneNumber: dto.phoneNumber, type: OtpType.PASSWORD_RESET });
@@ -201,7 +201,7 @@ export class AuthService {
 
         const user = await this.userRepository.findOne({ where: { phoneNumber } });
         if (!user) {
-            throw new UnauthorizedException('User not found');
+            throw new BadRequestException('auth.user_not_found');
         }
 
         user.passwordHash = await bcrypt.hash(newPassword, 10);

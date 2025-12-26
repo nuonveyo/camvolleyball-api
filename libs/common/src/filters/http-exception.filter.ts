@@ -6,10 +6,13 @@ import {
     HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { I18nContext, I18nService } from 'nestjs-i18n';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-    catch(exception: HttpException, host: ArgumentsHost) {
+    constructor(private readonly i18n: I18nService) { }
+
+    async catch(exception: HttpException, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         const status = exception.getStatus();
@@ -18,32 +21,55 @@ export class HttpExceptionFilter implements ExceptionFilter {
         let message = 'Internal server error';
         let error = 'Error';
 
+        // Extract key and arguments if available
+        let translationKey = '';
+        let translationArgs = {};
+
         if (typeof exceptionResponse === 'string') {
             message = exceptionResponse;
+            translationKey = exceptionResponse;
         } else if (typeof exceptionResponse === 'object') {
             // Handle ValidationPipe array of messages
             if (Array.isArray(exceptionResponse.message)) {
                 message = exceptionResponse.message[0]; // Take the first error message
+                translationKey = exceptionResponse.message[0];
             } else {
                 message = exceptionResponse.message?.toString() || message;
+                translationKey = exceptionResponse.message?.toString() || '';
             }
             error = exceptionResponse.error || error;
         }
 
-        // Determine HTTP Status Code
-        // Default: 201 Created (Success) for Logic/Validation errors to mask them
-        let httpStatus = HttpStatus.CREATED;
+        // Attempt Translation
+        const lang = I18nContext.current()?.lang || 'en';
+        try {
+            // Only translate if the key looks like a translation key (e.g. 'auth.user_not_found')
+            // or if we just want to try translating everything.
+            // For now, we try to translate everything.
+            const translated = await this.i18n.translate(`events.${translationKey}`, {
+                lang: lang,
+                args: translationArgs,
+            });
 
-        // Exception: Security errors (401, 403) return actual status
+            // If translation returns the key itself (meaning missing), fallback to original
+            if (translated !== `events.${translationKey}`) {
+                message = translated;
+            }
+        } catch (e) {
+            // Fallback to original message if translation fails
+        }
+
+        // Determine HTTP Status Code
+        let httpStatus = HttpStatus.CREATED;
         if (status === HttpStatus.UNAUTHORIZED || status === HttpStatus.FORBIDDEN) {
             httpStatus = status;
         }
 
         response.status(httpStatus).json({
-            status: status, // Original error code (e.g. 400, 404, 500)
+            status: status,
             message: message,
             error: error,
-            statusCode: httpStatus, // Actual HTTP Status sent (201, 401, 403)
+            statusCode: httpStatus,
         });
     }
 }

@@ -1,0 +1,11 @@
+{
+    "HELLO": "Hello",
+    "auth": {
+        "user_not_found": "User not found",
+        "invalid_credentials": "Password is incorrect",
+        "user_inactive": "User is not active"
+    },
+    "test": {
+        "error": "This is a test error"
+    }
+}
