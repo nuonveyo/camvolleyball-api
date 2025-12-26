@@ -35,20 +35,20 @@ export class AuthService {
         try {
             const payload = this.jwtService.verify(verificationToken);
             if (payload.purpose !== 'verification') {
-                throw new UnauthorizedException('Invalid token purpose');
+                throw new UnauthorizedException('auth.invalid_token_purpose');
             }
             phoneNumber = payload.phoneNumber;
         } catch (e) {
-            throw new UnauthorizedException('Invalid or expired verification token');
+            throw new UnauthorizedException('auth.invalid_verification_token');
         }
 
         if (password !== confirmPassword) {
-            throw new BadRequestException('Passwords do not match');
+            throw new BadRequestException('auth.passwords_do_not_match');
         }
 
         const existingUser = await this.userRepository.findOne({ where: { phoneNumber } });
         if (existingUser) {
-            throw new BadRequestException('Phone number already exists');
+            throw new BadRequestException('auth.phone_already_exists');
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -126,7 +126,7 @@ export class AuthService {
         if (dto.type === OtpType.VERIFICATION) {
             const existingUser = await this.userRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
             if (existingUser) {
-                throw new BadRequestException('Phone number is already registered');
+                throw new BadRequestException('auth.phone_already_registered');
             }
         }
 
@@ -148,7 +148,7 @@ export class AuthService {
         });
 
         // In production, do NOT return the code.
-        return { message: 'OTP sent successfully' };
+        return { message: 'auth.otp_sent_success' };
     }
 
     async confirmOtp(dto: ConfirmOtpDto) {
@@ -159,7 +159,7 @@ export class AuthService {
         });
 
         if (!validOtp || new Date() > validOtp.expiresAt) {
-            throw new UnauthorizedException('Invalid or expired OTP');
+            throw new BadRequestException('auth.invalid_otp');
         }
 
         // Mark OTP as used
@@ -172,7 +172,7 @@ export class AuthService {
             { expiresIn: '10m' } // Valid for 10 minutes
         );
 
-        return { message: 'OTP verified successfully', verificationToken };
+        return { message: 'auth.otp_verified_success', verificationToken };
     }
 
     async requestResetPassword(dto: RequestResetPasswordDto) {
@@ -192,11 +192,11 @@ export class AuthService {
         try {
             const payload = this.jwtService.verify(verificationToken);
             if (payload.purpose !== OtpType.PASSWORD_RESET) {
-                throw new UnauthorizedException('Invalid token purpose');
+                throw new UnauthorizedException('auth.invalid_token_purpose');
             }
             phoneNumber = payload.phoneNumber;
         } catch (e) {
-            throw new UnauthorizedException('Invalid or expired verification token');
+            throw new UnauthorizedException('auth.invalid_verification_token');
         }
 
         const user = await this.userRepository.findOne({ where: { phoneNumber } });
@@ -207,7 +207,7 @@ export class AuthService {
         user.passwordHash = await bcrypt.hash(newPassword, 10);
         await this.userRepository.save(user);
 
-        return { message: 'Password reset successfully' };
+        return { message: 'auth.password_reset_success' };
     }
 
     async logout(userId: string, deviceId: string) {
@@ -221,6 +221,6 @@ export class AuthService {
         }
         // If device not found, technically they are already "logged out" or never logged in.
         // We can just return success or warn. Returning success is safer for idempotency.
-        return { message: 'Logged out successfully' };
+        return { message: 'auth.logout_success' };
     }
 }

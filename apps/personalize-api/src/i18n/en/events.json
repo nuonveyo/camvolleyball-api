@@ -3,7 +3,17 @@
     "auth": {
         "user_not_found": "User not found",
         "invalid_credentials": "Phone number or Password is incorrect",
-        "user_inactive": "User is not active"
+        "user_inactive": "User is not active",
+        "phone_already_registered": "Phone number is already registered",
+        "otp_sent_success": "OTP sent successfully",
+        "invalid_otp": "Invalid or expired OTP",
+        "otp_verified_success": "OTP verified successfully",
+        "invalid_token_purpose": "Invalid token purpose",
+        "invalid_verification_token": "Invalid or expired verification token",
+        "passwords_do_not_match": "Passwords do not match",
+        "phone_already_exists": "Phone number already exists",
+        "password_reset_success": "Password reset successfully",
+        "logout_success": "Logged out successfully"
     },
     "test": {
         "error": "This is a test error"
@@ -11,7 +21,7 @@
     "validation": {
         "phone_length": "Phone number must be between 6 and 16 characters",
         "password_length": "Password must be between 6 and 12 characters",
-        "password_complexity": "Password must contain at least one letter, one number, and one special character",
+        "password_complexity": "Password must be between 6 and 12 characters with at least contain one letter, one number, and one special character",
         "invalid_phone": "Invalid phone number format"
     }
 }
