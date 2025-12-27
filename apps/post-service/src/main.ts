@@ -1,3 +1,4 @@
+process.env.TZ = 'UTC';
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { PostServiceModule } from './post-service.module';

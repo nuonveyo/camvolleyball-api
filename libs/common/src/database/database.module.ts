@@ -17,6 +17,7 @@ import * as entities from './entities';
                 database: configService.get<string>('DATABASE_NAME'),
                 entities: Object.values(entities).filter(entity => typeof entity === 'function'),
                 synchronize: true, // Auto-create tables (dev only)
+                timezone: 'Z',
             }),
         }),
     ],

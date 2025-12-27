@@ -8,6 +8,7 @@ import { SocialService } from '../social/social.service';
 import { JwtService } from '@nestjs/jwt';
 import { ProfileService } from '../profile/profile.service';
 import { EventService } from '../event/event.service';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @ApiTags('Posts')
 @ApiBearerAuth()
@@ -47,6 +48,7 @@ export class PostController {
     }
 
     @Get()
+    @UseGuards(OptionalJwtAuthGuard)
     @UseInterceptors(HttpCacheInterceptor)
     @ApiOperation({ summary: 'List all posts with pagination' })
     @ApiResponse({ status: 200, description: 'Return paginated posts' })
