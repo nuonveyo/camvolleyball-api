@@ -32,8 +32,9 @@ import { EventModule } from './event/event.module';
             host: configService.get('REDIS_HOST') || 'localhost',
             port: parseInt(configService.get('REDIS_PORT') || '6379'),
           },
-          ttl: 5, // 5 seconds (Confirmed empirically that this library uses SECONDS despite type definition)
+          ttl: 10, // 10 seconds (Final Configuration)
         }),
+        ttl: 10000, // 10000 milliseconds = 10 seconds
       }),
       inject: [ConfigService],
     }),
