@@ -54,8 +54,6 @@ export class PostController {
     @ApiResponse({ status: 200, description: 'Return paginated posts' })
     @ApiQuery({ name: 'page', required: false })
     @ApiQuery({ name: 'limit', required: false })
-    @ApiQuery({ name: 'search', required: false })
-    @ApiQuery({ name: 'tag', required: false })
     async findAll(@Query() paginationDto: PaginationDto, @Request() req) {
         let userId: string | null = null;
         let followingIds: string[] = [];

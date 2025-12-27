@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, ArrayContains, Raw, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Post, CreatePostDto, UpdatePostDto, User, PaginationDto, Comment, Like, Share, CreateCommentDto, NotificationType, CreateShareDto } from '@app/common';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -34,46 +34,55 @@ export class PostServiceService {
   }
 
   async findAll(payload: PaginationDto & { userId?: string, followingIds?: string[], interestedSectors?: string[] }) {
-    const { page = 1, limit = 10, search, tag, userId, followingIds, interestedSectors } = payload;
+    const { page = 1, limit = 10, userId, followingIds, interestedSectors } = payload;
     const skippedItems = (page - 1) * limit;
 
-    const baseCondition: FindOptionsWhere<Post> = {};
-    if (tag) baseCondition.tags = ArrayContains([tag]);
-    if (search) baseCondition.contents = Raw((alias) => `${alias}->>'text' ILIKE :search`, { search: `%${search}%` });
+    const query = this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.user', 'user')
+      .leftJoinAndSelect('user.profile', 'profile')
+      .leftJoinAndSelect('post.originalPost', 'originalPost')
+      .leftJoinAndSelect('originalPost.user', 'originalPostUser')
+      .leftJoinAndSelect('originalPostUser.profile', 'originalPostUserProfile')
+      .leftJoinAndSelect('post.venue', 'venue')
+      .leftJoinAndSelect('post.event', 'event')
+      .leftJoinAndSelect('event.homeTeam', 'homeTeam')
+      .leftJoinAndSelect('event.awayTeam', 'awayTeam')
+      .leftJoinAndSelect('event.venue', 'eventVenue');
 
-    // NEW: Sector Filter
-    if (interestedSectors && interestedSectors.length > 0) {
-      // Cast to any to avoid TypeORM strict enum checks if needed
-      baseCondition.sector = In(interestedSectors as any);
-    }
+    // Visibility Logic:
+    // 1. All Public Posts
+    // 2. My Own Posts
+    // 3. Followed Posts (Visibility = 'followers')
+    query.where('post.visibility = :public', { public: 'public' });
 
-    const where: FindOptionsWhere<Post>[] = [];
-
-    // 1. Public Posts
-    where.push({ ...baseCondition, visibility: 'public' });
-
-    // 2. My posts (always visible to me)
     if (userId) {
-      where.push({ ...baseCondition, userId });
+      query.orWhere('post.userId = :userId', { userId });
+
+      if (followingIds && followingIds.length > 0) {
+        query.orWhere(
+          '(post.userId IN (:...followingIds) AND post.visibility = :followers)',
+          { followingIds, followers: 'followers' }
+        );
+      }
     }
 
-    // 3. Followed posts (visible if I follow author)
-    if (followingIds && followingIds.length > 0) {
-      where.push({
-        ...baseCondition,
-        visibility: 'followers',
-        userId: In(followingIds),
-      });
+    // Sorting Logic:
+    // 1. Interested Sectors First
+    // 2. CreatedAt Desc
+    if (interestedSectors && interestedSectors.length > 0) {
+      query.addSelect(
+        `CASE WHEN post.sector IN (:...interestedSectors) THEN 0 ELSE 1 END`,
+        'priority'
+      );
+      query.setParameter('interestedSectors', interestedSectors);
+      query.addOrderBy('priority', 'ASC');
     }
 
+    query.addOrderBy('post.createdAt', 'DESC');
+    query.take(limit);
+    query.skip(skippedItems);
 
-    const [data, total] = await this.postRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      relations: ['user', 'user.profile', 'originalPost', 'originalPost.user', 'originalPost.user.profile', 'venue', 'event', 'event.homeTeam', 'event.awayTeam', 'event.venue'],
-      take: limit,
-      skip: skippedItems,
-    });
+    const [data, total] = await query.getManyAndCount();
 
     const mappedData = data.map(post => {
       const { user, originalPost, deletedAt, userId, event, ...rest } = post; // Exclude deletedAt, userId
