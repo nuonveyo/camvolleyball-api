@@ -1,5 +1,6 @@
-import { IsString, IsPhoneNumber, MinLength, MaxLength, Length, Matches } from 'class-validator';
+import { IsString, IsPhoneNumber, MinLength, MaxLength, Length, Matches, IsOptional, IsArray, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Sector } from '@app/common';
 
 export class RegisterDto {
     @ApiProperty({ example: '+85512345678', description: 'User phone number' })
@@ -29,4 +30,10 @@ export class RegisterDto {
     @ApiProperty({ example: 'Sokha Volleyball', description: 'User Nickname', required: false })
     @IsString()
     nickname: string;
+
+    @ApiProperty({ example: ['sports'], description: 'Interested Sectors', required: false, enum: Sector, isArray: true })
+    @IsOptional()
+    @IsArray()
+    @IsEnum(Sector, { each: true, message: 'validation.invalid_sector' })
+    interestedSectors: Sector[];
 }
