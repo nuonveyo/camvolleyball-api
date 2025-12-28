@@ -209,7 +209,8 @@ export class PostServiceService {
         actorId: dto.userId,
         type: NotificationType.COMMENT,
         entityId: dto.postId,
-        message: `${nickname} comment on your post`,
+        message: 'comment on your post',
+        actorName: nickname, // Send nickname separately
       });
     }
 
@@ -272,7 +273,8 @@ export class PostServiceService {
           actorId: dto.userId,
           type: NotificationType.LIKE,
           entityId: dto.postId,
-          message: `${nickname} like your post`,
+          message: 'like your post',
+          actorName: nickname, // Send nickname separately
         });
       }
 
@@ -320,7 +322,8 @@ export class PostServiceService {
         actorId: dto.userId,
         type: NotificationType.SHARE,
         entityId: dto.postId,
-        message: `${nickname} share your post`,
+        message: 'share your post',
+        actorName: nickname, // Send nickname separately
       });
     }
 

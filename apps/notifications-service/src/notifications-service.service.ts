@@ -51,20 +51,22 @@ export class NotificationsServiceService implements OnModuleInit {
     type: NotificationType;
     entityId?: string;
     message?: string;
+    actorName?: string; // Add optional actorName
   }) {
-    const notification = this.notificationRepository.create(payload);
+    const { actorName, ...data } = payload; // Extract actorName, allow it to be passed but not saved to DB if not in entity
+    const notification = this.notificationRepository.create(data);
     const saved = await this.notificationRepository.save(notification);
 
     // Emit Real-time (Socket.io)
     this.notificationsGateway.emitToUser(payload.recipientId, 'notification', saved);
 
     // Send Push Notification (Firebase)
-    await this.sendPushNotification(payload.recipientId, saved);
+    await this.sendPushNotification(payload.recipientId, saved, actorName);
 
     return saved;
   }
 
-  private async sendPushNotification(recipientId: string, notification: Notification) {
+  private async sendPushNotification(recipientId: string, notification: Notification, actorName?: string) {
     try {
       if (admin.apps.length === 0) {
         this.logger.warn('Firebase not initialized. Skipping push notification.');
@@ -101,7 +103,7 @@ export class NotificationsServiceService implements OnModuleInit {
       }
 
       if (notification.message) {
-        body = notification.message;
+        body = actorName ? `${actorName} ${notification.message}` : notification.message;
       }
 
       const message: admin.messaging.MulticastMessage = {
