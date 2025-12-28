@@ -138,15 +138,19 @@ export class NotificationsServiceService implements OnModuleInit {
     }
   }
 
-  async getUserNotifications(userId: string) {
-    const notifications = await this.notificationRepository.find({
+  async getUserNotifications(payload: { userId: string, page: number, limit: number }) {
+    const { userId, page = 1, limit = 20 } = payload;
+    const skippedItems = (page - 1) * limit;
+
+    const [notifications, total] = await this.notificationRepository.findAndCount({
       where: { recipientId: userId },
       order: { createdAt: 'DESC' },
       relations: ['actor', 'actor.profile'],
-      take: 20,
+      take: limit,
+      skip: skippedItems,
     });
 
-    return notifications.map(notification => {
+    const mappedData = notifications.map(notification => {
       const { actor, ...rest } = notification;
       return {
         ...rest,
@@ -158,6 +162,13 @@ export class NotificationsServiceService implements OnModuleInit {
         }
       };
     });
+
+    return {
+      data: mappedData,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
   }
 
   async markAsRead(id: string) {

@@ -13,8 +13,8 @@ export class NotificationsServiceController {
   }
 
   @MessagePattern('get_notifications')
-  async getNotifications(@Payload() userId: string) {
-    return this.notificationsService.getUserNotifications(userId);
+  async getNotifications(@Payload() data: { userId: string, page: number, limit: number }) {
+    return this.notificationsService.getUserNotifications(data);
   }
 
   @MessagePattern('mark_read')

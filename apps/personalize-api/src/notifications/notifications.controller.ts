@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Param, Inject, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Inject, UseGuards, Request, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -13,8 +13,11 @@ export class NotificationsController {
     @Get()
     @ApiOperation({ summary: 'Get current user notifications' })
     @ApiResponse({ status: 200, description: 'Return list of notifications' })
-    getMyNotifications(@Request() req) {
-        return this.client.send('get_notifications', req.user.userId);
+    @ApiQuery({ name: 'page', required: false, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    getMyNotifications(@Request() req, @Query() query: { page?: number, limit?: number }) {
+        const { page = 1, limit = 20 } = query;
+        return this.client.send('get_notifications', { userId: req.user.userId, page, limit });
     }
 
     @Post(':id/read')
