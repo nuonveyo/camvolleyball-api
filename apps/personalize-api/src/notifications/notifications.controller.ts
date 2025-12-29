@@ -15,8 +15,9 @@ export class NotificationsController {
     @ApiResponse({ status: 200, description: 'Return list of notifications' })
     @ApiQuery({ name: 'page', required: false, type: Number })
     @ApiQuery({ name: 'limit', required: false, type: Number })
-    getMyNotifications(@Request() req, @Query() query: { page?: number, limit?: number }) {
-        const { page = 1, limit = 20 } = query;
+    getMyNotifications(@Request() req, @Query() query: { page?: any, limit?: any }) {
+        const page = query.page ? parseInt(query.page, 10) : 1;
+        const limit = query.limit ? parseInt(query.limit, 10) : 20;
         return this.client.send('get_notifications', { userId: req.user.userId, page, limit });
     }
 
