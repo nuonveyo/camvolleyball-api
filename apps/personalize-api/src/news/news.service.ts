@@ -11,11 +11,21 @@ export class NewsService {
         private newsRepository: Repository<News>,
     ) { }
 
-    async findAll() {
-        return this.newsRepository.find({
+    async findAll(page: number = 1, limit: number = 20) {
+        const skippedItems = (page - 1) * limit;
+
+        const [data, total] = await this.newsRepository.findAndCount({
             order: { postDate: 'DESC' },
-            take: 20,
+            take: limit,
+            skip: skippedItems,
         });
+
+        return {
+            data,
+            total,
+            page,
+            lastPage: Math.ceil(total / limit),
+        };
     }
 
     async create(dto: CreateNewsDto) {
