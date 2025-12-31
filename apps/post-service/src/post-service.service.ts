@@ -29,6 +29,7 @@ export class PostServiceService {
       venueId: dto.venueId,
       sector: dto.sector,
       eventId: dto.eventId,
+      newsId: dto.newsId, // Add newsId
     });
     return this.postRepository.save(post);
   }
@@ -47,7 +48,8 @@ export class PostServiceService {
       .leftJoinAndSelect('post.event', 'event')
       .leftJoinAndSelect('event.homeTeam', 'homeTeam')
       .leftJoinAndSelect('event.awayTeam', 'awayTeam')
-      .leftJoinAndSelect('event.venue', 'eventVenue');
+      .leftJoinAndSelect('event.venue', 'eventVenue')
+      .leftJoinAndSelect('post.news', 'news'); // Join News
 
     // Visibility Logic:
     // 1. All Public Posts
@@ -172,7 +174,8 @@ export class PostServiceService {
           isFollowing: isFollowing,
         } : null,
         originalPost: mappedOriginalPost,
-        event: mappedEvent
+        event: mappedEvent,
+        news: post.news, // Return news object directly
       };
     });
 
@@ -187,7 +190,7 @@ export class PostServiceService {
   async findOne(id: string) {
     return this.postRepository.findOne({
       where: { id },
-      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile', 'venue'],
+      relations: ['user', 'user.profile', 'comments', 'comments.user', 'comments.user.profile', 'venue', 'event', 'news'],
     });
   }
 

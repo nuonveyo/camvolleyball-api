@@ -7,6 +7,7 @@ import { Share } from './share.entity';
 import { Venue } from './venue.entity';
 import { Sector } from '../enums/sector.enum';
 import { Event } from './event.entity';
+import { News } from './news.entity'; // Import News
 import { OneToOne } from 'typeorm';
 
 @Entity('posts')
@@ -72,4 +73,11 @@ export class Post extends BaseEntity {
     @OneToOne(() => Event, (event) => event.post)
     @JoinColumn({ name: 'event_id' })
     event: Event;
+
+    @Column({ name: 'news_id', nullable: true })
+    newsId: string;
+
+    @ManyToOne(() => News, { nullable: true })
+    @JoinColumn({ name: 'news_id' })
+    news: News;
 }

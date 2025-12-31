@@ -92,6 +92,11 @@ export class CreatePostDto {
     @IsOptional()
     @IsUUID()
     eventId?: string;
+
+    @ApiProperty({ required: false, description: 'Optional ID of the news this post refers to' })
+    @IsOptional()
+    @IsUUID()
+    newsId?: string;
 }
 
 export class UpdatePostDto {
