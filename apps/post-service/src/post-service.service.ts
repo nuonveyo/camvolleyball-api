@@ -82,15 +82,33 @@ export class PostServiceService {
     query.take(limit);
     query.skip(skippedItems);
 
+    // Fetch posts
     const [data, total] = await query.getManyAndCount();
 
+    // Fetch likes for the current user for these posts (Optimize N+1)
+    let likedPostIds = new Set<string>();
+    if (userId && data.length > 0) {
+      const postIds = data.map(p => p.id);
+      const likes = await this.likeRepository.createQueryBuilder('like')
+        .where('like.userId = :userId', { userId })
+        .andWhere('like.postId IN (:...postIds)', { postIds })
+        .select(['like.postId'])
+        .getMany();
+      likedPostIds = new Set(likes.map(l => l.postId));
+    }
+
+    const followingSet = new Set(followingIds || []);
+
     const mappedData = data.map(post => {
-      const { user, originalPost, deletedAt, userId, event, ...rest } = post; // Exclude deletedAt, userId
+      const { user, originalPost, deletedAt, userId: postUserId, event, ...rest } = post; // Exclude deletedAt, userId
 
       let mappedOriginalPost: any = null;
       if (originalPost) {
-        const { user: originalUser, deletedAt: originalDeletedAt, userId: originalUserId, ...originalRest } = originalPost; // Exclude deletedAt, userId
+        const { user: originalUser, deletedAt: originalDeletedAt, userId: originalUserId, ...originalRest } = originalPost;
         const originalProfile = originalUser?.profile;
+        // Check if current user follows original post author
+        const isFollowingOriginal = originalUserId === userId ? false : followingSet.has(originalUserId);
+
         mappedOriginalPost = {
           ...originalRest,
           profile: originalProfile ? {
@@ -102,11 +120,14 @@ export class PostServiceService {
             level: originalProfile.level,
             position: originalProfile.position,
             avatarUrl: originalProfile.avatarUrl,
+            isFollowing: isFollowingOriginal,
           } : null
         };
       }
 
       const userProfile = user?.profile;
+      // Check if current user follows post author
+      const isFollowing = postUserId === userId ? false : followingSet.has(postUserId);
 
       // Map Event Data (Only necessary fields)
       let mappedEvent: any = null;
@@ -138,6 +159,7 @@ export class PostServiceService {
 
       return {
         ...rest,
+        isLike: likedPostIds.has(post.id),
         profile: userProfile ? {
           userId: userProfile.userId,
           firstName: userProfile.firstName,
@@ -147,6 +169,7 @@ export class PostServiceService {
           level: userProfile.level,
           position: userProfile.position,
           avatarUrl: userProfile.avatarUrl,
+          isFollowing: isFollowing,
         } : null,
         originalPost: mappedOriginalPost,
         event: mappedEvent
