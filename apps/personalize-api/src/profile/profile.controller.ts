@@ -3,6 +3,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { ApiQuery } from '@nestjs/swagger';
+import { PaginationDto } from '@app/common';
+import { Query } from '@nestjs/common';
 
 @ApiTags('Profile')
 @ApiBearerAuth()
@@ -23,5 +27,19 @@ export class ProfileController {
     @ApiResponse({ status: 200, description: 'Profile updated' })
     updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
         return this.profileService.updateProfile(req.user.userId, dto);
+    }
+
+    @Get('list')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOperation({ summary: 'List all profiles' })
+    @ApiResponse({ status: 200, description: 'Return paginated profiles' })
+    @ApiQuery({ name: 'page', required: false })
+    @ApiQuery({ name: 'limit', required: false })
+    async findAll(
+        @Query() paginationDto: PaginationDto,
+        @Request() req
+    ) {
+        const userId = req.user?.userId;
+        return this.profileService.findAll(paginationDto, userId);
     }
 }

@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserProfile, User, Post, UserFollow } from '@app/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { SocialService } from '../social/social.service';
+import { PaginationDto } from '@app/common';
 
 
 @Injectable()
@@ -16,6 +18,7 @@ export class ProfileService {
         private postRepository: Repository<Post>,
         @InjectRepository(UserFollow)
         private userFollowRepository: Repository<UserFollow>,
+        private readonly socialService: SocialService, // Inject SocialService
     ) { }
 
     async getProfile(userId: string) {
@@ -70,5 +73,37 @@ export class ProfileService {
         Object.assign(profile, filteredDto);
         await this.profileRepository.save(profile);
         return profile;
+    }
+
+    async findAll(paginationDto: PaginationDto, currentUserId?: string) {
+        const { page = 1, limit = 10 } = paginationDto;
+        const skippedItems = (page - 1) * limit;
+
+        const [profiles, total] = await this.profileRepository.findAndCount({
+            take: limit,
+            skip: skippedItems,
+            order: { firstName: 'ASC' } // Default sorting
+        });
+
+        let followingIds = new Set<string>();
+        if (currentUserId) {
+            const ids = await this.socialService.getFollowingIds(currentUserId);
+            followingIds = new Set(ids);
+        }
+
+        const mappedProfiles = profiles.map(profile => {
+            const isFollowing = currentUserId ? (profile.userId === currentUserId ? false : followingIds.has(profile.userId)) : false;
+            return {
+                ...profile,
+                isFollowing
+            };
+        });
+
+        return {
+            data: mappedProfiles,
+            total,
+            page,
+            lastPage: Math.ceil(total / limit),
+        };
     }
 }
