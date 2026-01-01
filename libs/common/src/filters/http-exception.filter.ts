@@ -60,10 +60,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
 
         // Determine HTTP Status Code
-        let httpStatus = HttpStatus.CREATED;
-        if (status === HttpStatus.UNAUTHORIZED || status === HttpStatus.FORBIDDEN) {
-            httpStatus = status;
-        }
+        const httpStatus = status; // Use the exception status (400, 404, 500, etc.)
 
         response.status(httpStatus).json({
             status: status,
