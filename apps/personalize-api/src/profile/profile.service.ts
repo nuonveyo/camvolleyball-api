@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { UserProfile, User, Post, UserFollow } from '@app/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SocialService } from '../social/social.service';
@@ -80,6 +80,7 @@ export class ProfileService {
         const skippedItems = (page - 1) * limit;
 
         const [profiles, total] = await this.profileRepository.findAndCount({
+            where: currentUserId ? { userId: Not(currentUserId) } : {},
             take: limit,
             skip: skippedItems,
             order: { firstName: 'ASC' } // Default sorting

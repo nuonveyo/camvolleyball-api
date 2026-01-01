@@ -11,11 +11,11 @@ import { Query } from '@nestjs/common';
 @ApiTags('Profile')
 @ApiBearerAuth()
 @Controller('profile')
-@UseGuards(JwtAuthGuard)
 export class ProfileController {
     constructor(private readonly profileService: ProfileService) { }
 
     @Get()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get current user profile' })
     @ApiResponse({ status: 200, description: 'Return profile data' })
     getProfile(@Request() req) {
@@ -23,6 +23,7 @@ export class ProfileController {
     }
 
     @Post()
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Update user profile' })
     @ApiResponse({ status: 200, description: 'Profile updated' })
     updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
