@@ -7,9 +7,13 @@ export class CreateTeamDto {
     name: string;
 
     @ApiProperty({ required: false })
-    @IsUrl()
     @IsOptional()
     logoUrl?: string;
+
+    @ApiProperty({ required: false })
+    @IsString()
+    @IsOptional()
+    description?: string;
 
     @ApiProperty({ required: false, default: 6 })
     @IsInt()

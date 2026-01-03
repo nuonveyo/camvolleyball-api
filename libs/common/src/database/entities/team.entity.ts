@@ -12,6 +12,9 @@ export class Team extends BaseEntity {
     @Column({ name: 'logo_url', nullable: true })
     logoUrl: string;
 
+    @Column({ nullable: true })
+    description: string;
+
     @Column({ default: 6 })
     size: number; // Max size, e.g. 10
 

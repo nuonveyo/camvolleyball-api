@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamMember, TeamMemberRole, TeamMemberStatus } from '@app/common';
@@ -70,18 +70,102 @@ export class TeamService {
         return results;
     }
 
-    async findAll(paginationDto: any, name?: string): Promise<[Team[], number]> {
-        const { limit = 10, offset = 0 } = paginationDto;
+    async findOne(id: string): Promise<Team> {
+        const team = await this.teamRepository.findOne({
+            where: { id },
+            relations: ['members', 'members.user', 'members.user.profile']
+        });
+        if (!team) {
+            throw new NotFoundException('Team not found');
+        }
+        return team;
+    }
+
+    async update(id: string, updateTeamDto: any, userId: string): Promise<Team> {
+        const team = await this.findOne(id);
+
+        if (team.captainId !== userId) {
+            throw new ForbiddenException('Only the captain can update the team');
+        }
+
+        Object.assign(team, updateTeamDto);
+        return this.teamRepository.save(team);
+    }
+
+    async remove(id: string, userId: string): Promise<void> {
+        const team = await this.findOne(id);
+
+        if (team.captainId !== userId) {
+            throw new ForbiddenException('Only the captain can delete the team');
+        }
+
+        await this.teamRepository.softRemove(team);
+    }
+
+    async findMyTeams(userId: string): Promise<any[]> {
+        const teams = await this.teamRepository.createQueryBuilder('team')
+            .innerJoin('team.members', 'myMembership', 'myMembership.userId = :userId', { userId })
+            .leftJoin('team.members', 'members')
+            .leftJoin('members.user', 'user')
+            .leftJoin('user.profile', 'profile')
+            .addSelect([
+                'team',
+                'members.userId', 'members.role', 'members.status', 'members.position', 'members.jerseyNumber',
+                'user.id',
+                'profile.nickname', 'profile.avatarUrl' // Select nickname instead of names
+            ])
+            .loadRelationCountAndMap('team.memberCount', 'team.members')
+            .getMany();
+
+        return this.mapTeamsResponse(teams);
+    }
+
+    async findAll(paginationDto: any, name?: string) {
+        const { limit = 10, page = 1 } = paginationDto;
+        const skippedItems = (page - 1) * limit;
+
         const query = this.teamRepository.createQueryBuilder('team')
-            .leftJoinAndSelect('team.members', 'members')
-            .leftJoinAndSelect('members.user', 'user')
+            .leftJoin('team.members', 'members')
+            .leftJoin('members.user', 'user')
+            .leftJoin('user.profile', 'profile')
+            .addSelect([
+                'team',
+                'members.userId', 'members.role', 'members.status', 'members.position', 'members.jerseyNumber',
+                'user.id',
+                'profile.nickname', 'profile.avatarUrl'
+            ])
+            .loadRelationCountAndMap('team.memberCount', 'team.members')
             .take(limit)
-            .skip(offset);
+            .skip(skippedItems);
 
         if (name) {
             query.where('team.name ILIKE :name', { name: `%${name}%` });
         }
 
-        return query.getManyAndCount();
+        const [teams, total] = await query.getManyAndCount();
+
+        return {
+            data: this.mapTeamsResponse(teams),
+            total,
+            page,
+            lastPage: Math.ceil(total / limit),
+        };
+    }
+
+    private mapTeamsResponse(teams: Team[]): any[] {
+        return teams.map(team => ({
+            ...team,
+            members: team.members.map(member => ({
+                userId: member.userId,
+                role: member.role,
+                status: member.status,
+                position: member.position,
+                jerseyNumber: member.jerseyNumber,
+                user: member.user?.profile ? {
+                    nickname: member.user.profile.nickname,
+                    avatarUrl: member.user.profile.avatarUrl
+                } : null
+            }))
+        }));
     }
 }
