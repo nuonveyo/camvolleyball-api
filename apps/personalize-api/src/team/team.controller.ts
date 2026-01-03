@@ -58,6 +58,48 @@ export class TeamController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post(':id/join')
+    @ApiOperation({ summary: 'Request to join a team' })
+    requestToJoin(@Param('id') id: string, @Request() req) {
+        return this.teamService.requestToJoin(id, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/members/:userId/accept')
+    @ApiOperation({ summary: 'Captain accepts a join request' })
+    acceptJoinRequest(@Param('id') id: string, @Param('userId') userId: string, @Request() req) {
+        return this.teamService.acceptJoinRequest(id, userId, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/members/:userId/reject')
+    @ApiOperation({ summary: 'Captain rejects a join request' })
+    rejectJoinRequest(@Param('id') id: string, @Param('userId') userId: string, @Request() req) {
+        return this.teamService.rejectJoinRequest(id, userId, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/invitation/accept')
+    @ApiOperation({ summary: 'User accepts team invitation' })
+    acceptInvitation(@Param('id') id: string, @Request() req) {
+        return this.teamService.acceptInvitation(id, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':id/invitation/reject')
+    @ApiOperation({ summary: 'User rejects team invitation' })
+    rejectInvitation(@Param('id') id: string, @Request() req) {
+        return this.teamService.rejectInvitation(id, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id/members/:userId')
+    @ApiOperation({ summary: 'Captain removes a member' })
+    removeMember(@Param('id') id: string, @Param('userId') userId: string, @Request() req) {
+        return this.teamService.removeMember(id, userId, req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a team' })
     @ApiResponse({ status: 200, description: 'Team deleted.' })

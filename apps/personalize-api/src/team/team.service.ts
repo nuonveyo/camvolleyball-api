@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject, BadRequestException, ConflictException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team, TeamMember, TeamMemberRole, TeamMemberStatus } from '@app/common';
@@ -12,6 +13,7 @@ export class TeamService {
         private teamRepository: Repository<Team>,
         @InjectRepository(TeamMember)
         private teamMemberRepository: Repository<TeamMember>,
+        @Inject('NOTIFICATIONS_SERVICE') private readonly notificationsService: ClientProxy,
     ) { }
 
     async create(createTeamDto: CreateTeamDto, userId: string): Promise<Team> {
@@ -22,7 +24,7 @@ export class TeamService {
         });
         const savedTeam = await this.teamRepository.save(team);
 
-        // 2. Add Captain as Member
+        // 2. Add Captain as Member (ACCEPTED)
         const member = this.teamMemberRepository.create({
             teamId: savedTeam.id,
             userId: userId,
@@ -35,7 +37,7 @@ export class TeamService {
     }
 
     async addMembers(teamId: string, dtos: AddMemberDto[], requesterId: string): Promise<TeamMember[]> {
-        // 1. Verify Permission (Only Captain can add members for now)
+        // 1. Verify Permission (Only Captain can add members)
         const team = await this.teamRepository.findOne({ where: { id: teamId } });
         if (!team) throw new Error('Team not found');
 
@@ -49,22 +51,32 @@ export class TeamService {
             // 2. Check if already member
             const existing = await this.teamMemberRepository.findOne({ where: { teamId, userId: dto.userId } });
             if (existing) {
-                // Skip existing members to prevent duplicates/errors
+                // If member exists but is REJECTED or removed, we might want to re-invite? 
+                // For now, skip to avoid duplicates.
                 continue;
             }
 
-            // 3. Add Member
+            // 3. Add Member as PENDING (Invitation)
             const member = this.teamMemberRepository.create({
                 teamId,
                 userId: dto.userId,
                 role: dto.role || TeamMemberRole.MEMBER,
-                status: TeamMemberStatus.ACCEPTED,
+                status: TeamMemberStatus.PENDING, // Default to PENDING for invites
                 position: dto.position,
                 jerseyNumber: dto.jerseyNumber
             });
 
             const saved = await this.teamMemberRepository.save(member);
             results.push(saved);
+
+            // 4. Send Notification
+            this.notificationsService.emit('notify_user', {
+                recipientId: dto.userId,
+                actorId: requesterId,
+                type: 'TEAM_INVITE',
+                entityId: teamId,
+                message: `You have been invited to join team ${team.name}`,
+            });
         }
 
         return results;
@@ -92,6 +104,140 @@ export class TeamService {
         return this.teamRepository.save(team);
     }
 
+    async requestToJoin(teamId: string, userId: string): Promise<TeamMember> {
+        const team = await this.findOne(teamId);
+
+        // Check if already a member or pending
+        const existing = await this.teamMemberRepository.findOne({ where: { teamId, userId } });
+        if (existing) {
+            if (existing.status === TeamMemberStatus.PENDING) {
+                throw new ConflictException('You already have a pending request or invitation.');
+            }
+            if (existing.status === TeamMemberStatus.ACCEPTED) {
+                throw new ConflictException('You are already a member of this team.');
+            }
+        }
+
+        // Create Pending Member (Join Request)
+        const member = this.teamMemberRepository.create({
+            teamId,
+            userId,
+            role: TeamMemberRole.MEMBER,
+            status: TeamMemberStatus.PENDING,
+        });
+        const saved = await this.teamMemberRepository.save(member);
+
+        // Notify Captain
+        this.notificationsService.emit('notify_user', {
+            recipientId: team.captainId,
+            actorId: userId,
+            type: 'TEAM_JOIN_REQUEST',
+            entityId: teamId,
+            message: `User requested to join your team ${team.name}`,
+        });
+
+        return saved;
+    }
+
+    async acceptJoinRequest(teamId: string, memberUserId: string, captainId: string): Promise<TeamMember> {
+        return this.updateMemberStatus(teamId, memberUserId, captainId, TeamMemberStatus.ACCEPTED, 'TEAM_JOIN_ACCEPTED');
+    }
+
+    async rejectJoinRequest(teamId: string, memberUserId: string, captainId: string): Promise<void> {
+        await this.removeMember(teamId, memberUserId, captainId, 'TEAM_JOIN_REJECTED');
+    }
+
+    async acceptInvitation(teamId: string, userId: string): Promise<TeamMember> {
+        const member = await this.teamMemberRepository.findOne({ where: { teamId, userId } });
+        if (!member || member.status !== TeamMemberStatus.PENDING) {
+            throw new NotFoundException('No pending invitation found');
+        }
+
+        member.status = TeamMemberStatus.ACCEPTED;
+        const saved = await this.teamMemberRepository.save(member);
+
+        const team = await this.findOne(teamId);
+
+        // Notify Captain
+        this.notificationsService.emit('notify_user', {
+            recipientId: team.captainId,
+            actorId: userId,
+            type: 'TEAM_INVITE_ACCEPTED',
+            entityId: teamId,
+            message: `User accepted your invitation to join ${team.name}`,
+        });
+
+        return saved;
+    }
+
+    async rejectInvitation(teamId: string, userId: string): Promise<void> {
+        const member = await this.teamMemberRepository.findOne({ where: { teamId, userId } });
+        if (!member || member.status !== TeamMemberStatus.PENDING) {
+            throw new NotFoundException('No pending invitation found');
+        }
+
+        await this.teamMemberRepository.remove(member);
+
+        const team = await this.findOne(teamId);
+        // Notify Captain
+        this.notificationsService.emit('notify_user', {
+            recipientId: team.captainId,
+            actorId: userId,
+            type: 'TEAM_INVITE_REJECTED',
+            entityId: teamId,
+            message: `User declined your invitation to join ${team.name}`,
+        });
+    }
+
+
+    async removeMember(teamId: string, memberUserId: string, requesterId: string, notificationType: string = 'TEAM_MEMBER_REMOVED'): Promise<void> {
+        const team = await this.findOne(teamId);
+
+        if (team.captainId !== requesterId) {
+            // Basic check: requester must be captain unless it's the user leaving themselves? 
+            // Requirement says "Capitain of the team can be remove the members back". 
+            // Assuming specifically Captain removing others.
+            throw new ForbiddenException('Only the captain can remove members');
+        }
+
+        const member = await this.teamMemberRepository.findOne({ where: { teamId, userId: memberUserId } });
+        if (!member) throw new NotFoundException('Member not found');
+
+        await this.teamMemberRepository.remove(member);
+
+        // Notify Removed User
+        this.notificationsService.emit('notify_user', {
+            recipientId: memberUserId,
+            actorId: requesterId,
+            type: notificationType,
+            entityId: teamId,
+            message: notificationType === 'TEAM_JOIN_REJECTED' ? `Your request to join ${team.name} was rejected` : `You have been removed from team ${team.name}`,
+        });
+    }
+
+    // Helper to update status (Accept Request)
+    private async updateMemberStatus(teamId: string, memberUserId: string, captainId: string, newStatus: TeamMemberStatus, notificationType: string): Promise<TeamMember> {
+        const team = await this.findOne(teamId);
+        if (team.captainId !== captainId) throw new ForbiddenException('Only captain can perform this action');
+
+        const member = await this.teamMemberRepository.findOne({ where: { teamId, userId: memberUserId } });
+        if (!member) throw new NotFoundException('Member request not found');
+
+        member.status = newStatus;
+        const saved = await this.teamMemberRepository.save(member);
+
+        this.notificationsService.emit('notify_user', {
+            recipientId: memberUserId,
+            actorId: captainId,
+            type: notificationType,
+            entityId: teamId,
+            message: `Your request to join ${team.name} has been accepted`,
+        });
+
+        return saved;
+    }
+
+    // Reuse remove for actual delete
     async remove(id: string, userId: string): Promise<void> {
         const team = await this.findOne(id);
 
